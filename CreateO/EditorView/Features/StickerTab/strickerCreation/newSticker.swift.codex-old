@@ -1,0 +1,95 @@
+//
+//  newSticker.swift
+//  DummySwiftApp
+//
+//  Created by GU on 18/03/26.
+//
+import PhotosUI
+import SwiftUI
+
+struct newSticker: View {
+    @Binding var savedStickers: [UIImage]
+    @Binding var selectedSticker: UIImage?
+
+    @State private var stickerItem: PhotosPickerItem?
+    @State private var stickerImage: UIImage?
+    @State private var showPreview = false
+    private let columns = [
+        GridItem(.adaptive(minimum: 84, maximum: 120), spacing: 12)
+    ]
+
+    var body: some View {
+        VStack(spacing: 12) {
+            HStack {
+                PhotosPicker(selection: $stickerItem, matching: .images) {
+                    Label("Add Sticker", systemImage: "plus")
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(Color(uiColor: .secondarySystemBackground), in: Capsule())
+                }
+
+                Spacer()
+            }
+            .padding(.horizontal)
+
+            if savedStickers.isEmpty {
+                VStack(spacing: 8) {
+                    Text("No saved stickers yet")
+                        .font(.title3.weight(.semibold))
+                    Text("Import a photo to build your sticker library.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.horizontal, 24)
+            } else {
+                ScrollView {
+                    LazyVGrid(columns: columns, spacing: 16) {
+                        ForEach(savedStickers, id: \.self) { image in
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(height: 100)
+                                .frame(maxWidth: .infinity)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .onTapGesture {
+                                    selectedSticker = image
+                                }
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
+                }
+            }
+        }
+        .onChange(of: stickerItem) {_, newValue in
+            Task {
+                guard let item = newValue,
+                      let data = try? await item.loadTransferable(type: Data.self),
+                      let newImage = UIImage(data: data) else { return }
+
+                await MainActor.run {
+                    stickerImage = newImage
+                    showPreview = true
+                    stickerItem = nil
+                }
+            }
+        }
+        .sheet(isPresented: $showPreview) {
+            StickerPreviewSheet(
+                image: stickerImage ?? UIImage(),
+                showPreview: $showPreview,
+                savedStickers: $savedStickers
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(30)
+        }
+    }
+}
+
+#Preview {
+    newSticker(savedStickers: .constant([]), selectedSticker: .constant(nil))
+}

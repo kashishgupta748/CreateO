@@ -1,0 +1,70 @@
+//
+//  StickerPreviewSheet.swift
+//  DummySwiftApp
+//
+//  Created by GU on 19/03/26.
+//
+
+import SwiftUI
+
+struct StickerPreviewSheet: View {
+    
+    let image: UIImage
+    
+    @Binding var showPreview: Bool
+    @Binding var savedStickers: [UIImage]
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            
+            Text("New Sticker")
+                
+                .font(.title2.bold())
+                .padding(.top)
+    
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFit()
+                .frame(maxHeight: 400)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(.horizontal)
+            
+            Spacer()
+            
+            HStack {
+
+                Button {
+                    showPreview = false
+                } label: {
+                    Image(systemName: "xmark")
+                        .frame(width: 50, height: 50)
+                        .background(Color.gray.opacity(0.2))
+                        .clipShape(Circle())
+                        .foregroundStyle(.black)
+                }
+                
+                Spacer()
+                
+                Button {
+                    savedStickers.append(image) 
+                    showPreview = false
+                } label: {
+                    Image(systemName: "plus")
+                        .frame(width: 50, height: 50)
+                        .background(Color.gray.opacity(0.2))
+                        .clipShape(Circle())
+                        .foregroundStyle(.black)
+                }
+            }
+            .padding(.horizontal, 40)
+            .padding(.bottom)
+        }
+    }
+}
+#Preview {
+    StickerPreviewSheet(
+        image: UIImage(systemName: "photo") ?? UIImage(),
+        showPreview: .constant(true),
+        savedStickers: .constant([])
+    )
+}
