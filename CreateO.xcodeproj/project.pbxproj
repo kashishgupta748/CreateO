@@ -13,10 +13,12 @@
 		848712C82FDBE86400C3FAFB /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = 848712C72FDBE86400C3FAFB /* Realtime */; };
 		848712CA2FDBE86400C3FAFB /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = 848712C92FDBE86400C3FAFB /* Storage */; };
 		848712CD2FDBE86F00C3FAFB /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 848712CC2FDBE86F00C3FAFB /* Supabase */; };
+		8492F37A2FE14AA700568D7E /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 8492F3792FE14AA700568D7E /* .gitignore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		848710032FDBE6A500C3FAFB /* CreateO.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CreateO.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8492F3792FE14AA700568D7E /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -47,6 +49,7 @@
 		84870FFA2FDBE6A500C3FAFB = {
 			isa = PBXGroup;
 			children = (
+				8492F3792FE14AA700568D7E /* .gitignore */,
 				848710052FDBE6A500C3FAFB /* CreateO */,
 				848712CB2FDBE86F00C3FAFB /* Frameworks */,
 				848710042FDBE6A500C3FAFB /* Products */,
@@ -141,6 +144,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8492F37A2FE14AA700568D7E /* .gitignore in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
