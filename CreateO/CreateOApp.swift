@@ -9,9 +9,23 @@ import SwiftUI
 
 @main
 struct CreateOApp: App {
+    @State private var authManager = AuthManager()
+    @State private var dataStore = DataStore()
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
+                .environment(authManager)
+                .environment(dataStore)
+                .task {
+                    await authManager.restoreSession()
+                    await dataStore.bootstrap(authManager: authManager)
+                }
+                .onChange(of: authManager.state) { _, _ in
+                    Task {
+                        await dataStore.bootstrap(authManager: authManager)
+                    }
+                }
         }
     }
 }
