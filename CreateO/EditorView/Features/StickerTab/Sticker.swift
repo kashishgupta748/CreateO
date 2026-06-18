@@ -12,6 +12,7 @@ struct Sticker: View {
     @Binding var savedStickers: [UIImage]
     @Binding var selectedSticker: UIImage?
     @Binding var recentStickers: [UIImage]
+    @Binding var selectedEmoji: String?
 
     var body: some View {
         VStack(spacing: 16) {
@@ -40,7 +41,7 @@ struct Sticker: View {
                 case .newSticker:
                     newSticker(savedStickers: $savedStickers, selectedSticker: $selectedSticker)
                 case .emojis:
-                    emojis()
+                    emojis(selectedEmoji: $selectedEmoji)
                 case .shapes:
                     shapes()
                 }
@@ -52,5 +53,5 @@ struct Sticker: View {
 }
 
 #Preview {
-    Sticker(savedStickers: .constant([]), selectedSticker: .constant(nil), recentStickers: .constant([]))
+    Sticker(savedStickers: .constant([]), selectedSticker: .constant(nil), recentStickers: .constant([]), selectedEmoji: .constant(nil))
 }

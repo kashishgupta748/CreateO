@@ -52,6 +52,50 @@ extension EditorView {
         }
     }
 
+    func addEmojiToCanvas(_ emoji: String) {
+        isFilterActive = false
+        isBrushActive = false
+        dismissImageActions()
+        selectedImageID = nil
+
+        // Render emoji → UIImage so it behaves like a sticker:
+        // pinch-to-zoom works, no text-style popup appears
+        let renderSize: CGFloat = 200
+        let canvasSize: CGFloat = 120
+        let image = renderEmojiImage(emoji, size: renderSize)
+
+        performHistoryChange {
+            let element = Element(
+                id: UUID(),
+                elementType: .emojis,
+                x: 0,
+                y: 0,
+                height: canvasSize,
+                width: canvasSize,
+                elementPath: "",
+                elementFilter: .original,
+                zIndex: nextAvailableLayerZIndex()
+            )
+            canvasImages.append(CanvasImage(image: image, element: element))
+            selectedImageID = element.id
+            showSheet = false
+            // addToRecent() intentionally NOT called for emojis
+        }
+    }
+
+    private func renderEmojiImage(_ emoji: String, size: CGFloat) -> UIImage {
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: size, height: size))
+        return renderer.image { _ in
+            let font = UIFont.systemFont(ofSize: size * 0.80)
+            let attrs: [NSAttributedString.Key: Any] = [.font: font]
+            let str = emoji as NSString
+            let textSize = str.size(withAttributes: attrs)
+            let origin = CGPoint(x: (size - textSize.width) / 2,
+                                 y: (size - textSize.height) / 2)
+            str.draw(at: origin, withAttributes: attrs)
+        }
+    }
+
     func removeTextLayerIfEmpty(_ textID: UUID) {
         guard let index = canvasTexts.firstIndex(where: { $0.id == textID }) else { return }
         guard canvasTexts[index].text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
