@@ -18,6 +18,7 @@ struct CreateOApp: App {
                 .environment(authManager)
                 .environment(dataStore)
                 .task {
+
                     authManager.startAuthStateListener()
                     await authManager.restoreSession()
                     await dataStore.bootstrap(authManager: authManager)
@@ -29,6 +30,7 @@ struct CreateOApp: App {
                         }
                     }
                 }
+
         }
     }
 }
