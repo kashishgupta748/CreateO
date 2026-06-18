@@ -6,6 +6,17 @@ struct SubjectBorderView: View {
     let color: Color
     let lineWidth: CGFloat
 
+    private var maskPadding: CGFloat {
+        max(lineWidth * 2, 1)
+    }
+
+    private var paddedSize: CGSize {
+        CGSize(
+            width: size.width + (maskPadding * 2),
+            height: size.height + (maskPadding * 2)
+        )
+    }
+
     private var offsetPoints: [CGSize] {
         guard lineWidth > 0 else { return [] }
 
@@ -22,13 +33,17 @@ struct SubjectBorderView: View {
     var body: some View {
         ZStack {
             ForEach(Array(offsetPoints.enumerated()), id: \.offset) { _, point in
-                Image(uiImage: image)
-                    .renderingMode(.template)
-                    .resizable()
-                    .frame(width: size.width, height: size.height)
-                    .foregroundStyle(color)
+                color
+                    .frame(width: paddedSize.width, height: paddedSize.height)
+                    .mask {
+                        Image(uiImage: image)
+                            .resizable()
+                            .frame(width: size.width, height: size.height)
+                            .frame(width: paddedSize.width, height: paddedSize.height)
+                    }
                     .offset(point)
             }
         }
+        .frame(width: paddedSize.width, height: paddedSize.height)
     }
 }
