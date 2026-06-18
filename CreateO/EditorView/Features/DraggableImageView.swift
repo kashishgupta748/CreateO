@@ -205,6 +205,7 @@ struct DraggableImageView: View {
                 let currentFilter = item.element.elementFilter ?? .original
                 guard currentFilter != .original else {
                     filteredImage = nil
+                    item.cachedFilteredImage = nil
                     return
                 }
                 isProcessing = true
@@ -212,9 +213,25 @@ struct DraggableImageView: View {
                     isProcessing = false
                     return
                 }
-                let processor = ImageFilterProcessor()
-                let result: CGImage = await processor.apply(currentFilter, to: sourceCG)
-                filteredImage = result
+                
+                if currentFilter == .animeStyle || currentFilter == .watercolor || currentFilter == .sketch {
+                    do {
+                        let resultImg = try await AIFilterService.shared.applyFilter(image: item.image, filter: currentFilter)
+                        filteredImage = resultImg.cgImage
+                        item.cachedFilteredImage = resultImg
+                    } catch {
+                        print("AI Filter API call failed: \(error). Falling back to local filter.")
+                        let processor = ImageFilterProcessor()
+                        let result: CGImage = await processor.apply(currentFilter, to: sourceCG)
+                        filteredImage = result
+                        item.cachedFilteredImage = UIImage(cgImage: result)
+                    }
+                } else {
+                    let processor = ImageFilterProcessor()
+                    let result: CGImage = await processor.apply(currentFilter, to: sourceCG)
+                    filteredImage = result
+                    item.cachedFilteredImage = UIImage(cgImage: result)
+                }
                 isProcessing = false
             }
 
