@@ -66,6 +66,8 @@ struct LoginView: View {
             Text("CreateO")
                 .font(.system(size: 34, weight: .bold, design: .rounded))
 
+            Text("Sign in to continue.")
+                .font(.title3.weight(.semibold))
         }
         .padding(.top, 12)
     }
@@ -75,10 +77,9 @@ struct LoginView: View {
             VStack(spacing: 14) {
                 field(
                     title: "Email",
-                    
                     showsWarning: !email.isEmpty && !emailIsValid
                 ) {
-                    TextField("Enter your Email", text: $email)
+                    TextField("", text: $email)
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)

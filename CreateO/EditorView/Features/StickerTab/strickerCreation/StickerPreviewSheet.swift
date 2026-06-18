@@ -97,12 +97,10 @@ struct StickerPreviewSheet: View {
         isProcessing = true
 
         let sourceImage = image
-        let cutout = await Task.detached(priority: .userInitiated) {
-            let preparedImage = sourceImage.normalizedForEditing()?.downscaledForProcessing() ?? sourceImage
-            return await EditorView.backgroundRemovedImage(from: preparedImage)
-        }.value
+        let preparedImage = sourceImage.normalizedForEditing()?.downscaledForProcessing() ?? sourceImage
+        let cutout = await EditorView.backgroundRemovedImage(from: preparedImage)
 
-        processedImage = cutout ?? sourceImage
+        processedImage = cutout?.visibleAlphaCrop(padding: 12)?.image ?? cutout ?? sourceImage
         isProcessing = false
     }
 }
