@@ -361,69 +361,8 @@ class DataStore {
         }
     }
 
-    func updateAlbumDesigns(albumID: UUID, designIDs: [UUID]) {
-        guard let index = albums.firstIndex(where: { $0.id == albumID }) else { return }
-        albums[index].albumDesignIDs = designIDs
-        albums[index].updatedAt = Date()
-        
-        // Recalculate thumbnail if needed
-        if let firstID = designIDs.first, let design = designs.first(where: { $0.id == firstID }) {
-            albums[index].thumbnailPath = design.thumbnailPath
-        } else {
-            albums[index].thumbnailPath = ""
-        }
-        
-        if let authManager = currentAuthManager {
-            Task {
-                await uploadAlbumToCloud(album: albums[index], authManager: authManager)
-            }
-        }
-        if let authManager = currentAuthManager {
-            saveLocalCache(authManager: authManager)
-        }
-    }
-
     func deleteAlbum(album: Album) {
         albums.removeAll { $0.id == album.id }
-        if let authManager = currentAuthManager {
-            saveLocalCache(authManager: authManager)
-        }
-    }
-
-    func renameAlbum(id: UUID, newName: String) {
-        if let index = albums.firstIndex(where: { $0.id == id }) {
-            albums[index].albumName = newName
-            albums[index].updatedAt = Date()
-            if let authManager = currentAuthManager {
-                Task {
-                    await uploadAlbumToCloud(album: albums[index], authManager: authManager)
-                }
-            }
-        }
-        if let authManager = currentAuthManager {
-            saveLocalCache(authManager: authManager)
-        }
-    }
-
-    func removeDesignsFromAlbum(albumID: UUID, designIDs: Set<UUID>) {
-        if let index = albums.firstIndex(where: { $0.id == albumID }) {
-            albums[index].albumDesignIDs.removeAll { designIDs.contains($0) }
-            albums[index].updatedAt = Date()
-            
-            // Recalculate thumbnail if needed
-            let remaining = albums[index].albumDesignIDs
-            if let firstID = remaining.first, let design = designs.first(where: { $0.id == firstID }) {
-                albums[index].thumbnailPath = design.thumbnailPath
-            } else {
-                albums[index].thumbnailPath = ""
-            }
-            
-            if let authManager = currentAuthManager {
-                Task {
-                    await uploadAlbumToCloud(album: albums[index], authManager: authManager)
-                }
-            }
-        }
         if let authManager = currentAuthManager {
             saveLocalCache(authManager: authManager)
         }

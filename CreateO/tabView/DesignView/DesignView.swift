@@ -60,7 +60,8 @@ struct DesignView: View {
                     uploadPicture: startUpload,
                     createStory: startStory
                 )
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.height(324)])
+                .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showCamera) {
                 CameraPicker(
@@ -147,13 +148,13 @@ struct DesignView: View {
                             .frame(maxWidth: contentWidth)
                     }
                     .frame(width: contentWidth)
-                    .position(x: proxy.size.width / 2, y: titleCenterY)
-
-                    Image("duck")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: contentWidth, height: imageHeight, alignment: .center)
-                        .position(x: proxy.size.width / 2, y: imageCenterY)
+//                    .position(x: proxy.size.width / 2, y: titleCenterY)
+//
+//                    Image("duck")
+//                        .resizable()
+//                        .scaledToFit()
+//                        .frame(width: contentWidth, height: imageHeight, alignment: .center)
+//                        .position(x: proxy.size.width / 2, y: imageCenterY)
                     
                     VStack(spacing: 0) {
                         Button(action: {
@@ -197,7 +198,7 @@ struct DesignView: View {
     }
 
     private func startCamera() {
-        dismissAddOptionsThen {
+        dismissAddOptionsThen(delay: 0.4) {
             showCamera = true
         }
     }
@@ -400,39 +401,49 @@ private struct AddDesignOptionsSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
+            VStack(spacing: 0) {
+                SheetRow(
+                    title: "Blank Canvas",
+                    subtitle: "Start fresh and create from scratch.",
+                    icon: "square.and.pencil",
+                    action: createCanvas
+                )
 
-                    SheetRow(
-                        title: "Blank Canvas",
-                        subtitle: "Start fresh and create from scratch.",
-                        icon: "square.and.pencil",
-                        action: createCanvas
-                    )
+                sheetDivider
 
-                    SheetRow(
-                        title: "Take Photo",
-                        subtitle: "Capture a moment and edit your way.",
-                        icon: "camera.fill",
-                        action: clickPicture
-                    )
+                SheetRow(
+                    title: "Take Photo",
+                    subtitle: "Capture a moment and edit your way.",
+                    icon: "camera.fill",
+                    action: clickPicture
+                )
 
-                    SheetRow(
-                        title: "Upload Photo",
-                        subtitle: "Import images and customize creatively.",
-                        icon: "photo",
-                        action: uploadPicture
-                    )
+                sheetDivider
 
-                    SheetRow(
-                        title: "Create Story",
-                        subtitle: "Build your own stories with your designs.",
-                        icon: "play.rectangle.on.rectangle.fill",
-                        action: createStory
-                    )
-                }
+                SheetRow(
+                    title: "Upload Photo",
+                    subtitle: "Import images and customize creatively.",
+                    icon: "photo",
+                    action: uploadPicture
+                )
+
+                sheetDivider
+
+                SheetRow(
+                    title: "Create Story",
+                    subtitle: "Build your own stories with your designs.",
+                    icon: "play.rectangle.on.rectangle.fill",
+                    action: createStory
+                )
             }
-            .listStyle(.insetGrouped)
+            .padding(.vertical, 8)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .stroke(Color.black.opacity(0.05), lineWidth: 1)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
             .navigationTitle("New Design")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -447,6 +458,12 @@ private struct AddDesignOptionsSheet: View {
             }
         }
     }
+
+    private var sheetDivider: some View {
+        Divider()
+            .padding(.leading, 70)
+            .padding(.trailing, 24)
+    }
 }
 
 private struct SheetRow: View {
@@ -457,7 +474,7 @@ private struct SheetRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 14) {
+            HStack(spacing: 12) {
 
                 ZStack {
                     RoundedRectangle(cornerRadius: 12)
@@ -468,14 +485,18 @@ private struct SheetRow: View {
                 }
                 .frame(width: 38, height: 38)
 
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.system(size: 16, weight: .semibold))
 
                     Text(subtitle)
                         .font(.system(size: 13))
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.80)
+                        .allowsTightening(true)
                 }
+                .layoutPriority(1)
 
                 Spacer()
 
@@ -483,7 +504,8 @@ private struct SheetRow: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.tertiary)
             }
-            .padding(.vertical, 6)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
         }
         .buttonStyle(.plain)
     }

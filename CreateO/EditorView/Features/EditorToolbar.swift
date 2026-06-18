@@ -79,24 +79,6 @@ struct EditorToolbar: ToolbarContent {
             .accessibilityLabel(isAnyEditorModeActive ? "Done" : "Save")
         }
 
-        ToolbarItem(placement: .bottomBar) {
-            EditorBottomToolbar(
-                items: bottomToolbarItems,
-                onUpload: onUpload
-            )
-        }
-    }
-
-    private var bottomToolbarItems: [BottomToolbarItem] {
-        [
-            .action(filterAction),
-            .action(doodleAction),
-            .action(brushAction),
-            .upload,
-            .action(stickerAction),
-            .action(textAction),
-            .action(templateAction)
-        ]
     }
 
     private var filterAction: ToolbarAction {

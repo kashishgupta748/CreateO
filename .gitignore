@@ -63,3 +63,8 @@ fastlane/test_output
 
 ## Logs
 *.log
+
+**/xcuserdata/
+**/*.xcuserstate
+DerivedData/
+.build/

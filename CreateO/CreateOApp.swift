@@ -18,19 +18,15 @@ struct CreateOApp: App {
                 .environment(authManager)
                 .environment(dataStore)
                 .task {
-                    
                     authManager.startAuthStateListener()
                     await authManager.restoreSession()
                     await dataStore.bootstrap(authManager: authManager)
                 }
-                .onChange(of: authManager.state) { _, newState in
-                    if newState != .loading {
-                        Task {
-                            await dataStore.bootstrap(authManager: authManager)
-                        }
+                .onChange(of: authManager.state) { _, _ in
+                    Task {
+                        await dataStore.bootstrap(authManager: authManager)
                     }
                 }
-            
         }
     }
 }
