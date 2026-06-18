@@ -148,13 +148,13 @@ struct DesignView: View {
                             .frame(maxWidth: contentWidth)
                     }
                     .frame(width: contentWidth)
-                    .position(x: proxy.size.width / 2, y: titleCenterY)
-
-                    Image("duck")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: contentWidth, height: imageHeight, alignment: .center)
-                        .position(x: proxy.size.width / 2, y: imageCenterY)
+//                    .position(x: proxy.size.width / 2, y: titleCenterY)
+//
+//                    Image("duck")
+//                        .resizable()
+//                        .scaledToFit()
+//                        .frame(width: contentWidth, height: imageHeight, alignment: .center)
+//                        .position(x: proxy.size.width / 2, y: imageCenterY)
                     
                     VStack(spacing: 0) {
                         Button(action: {

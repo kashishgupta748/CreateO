@@ -1,0 +1,70 @@
+## User-specific
+*.xcuserstate
+project.xcworkspace/xcuserdata/
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+xcuserdata/
+
+## Xcode build files
+DerivedData/
+build/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+## macOS Finder / System files
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon\r
+._*
+.Spotlight-V100
+.Trashes
+BrushUserPrefs.plist
+findertimesout
+com.apple.finder.plist
+
+## Swift Package Manager
+.build/
+.swiftpm/xcode/package.xcworkspace/xcuserdata/
+.swiftpm/xcode/workspace.xcworkspace/xcuserdata/
+
+## CocoaPods
+# We recommend against committing the Pods directory to git.
+Pods/
+Headers/
+.sandbox.lockfile
+
+## Carthage
+Carthage/Build/
+
+## Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+## SwiftLint / tools
+.swiftlint-cache
+
+## AI Assistant Configs
+.claude/
+.claude.md
+.codex/
+.codex.md
+.antigravity/
+.antigravity.md
+
+## Environment Files
+.env
+.env.local
+
+## Logs
+*.log
+
+**/xcuserdata/
+**/*.xcuserstate
+DerivedData/
+.build/
