@@ -9,6 +9,34 @@ struct SearchView: View {
     @State private var selectedAlbum: Album?
     
     @Environment(DataStore.self) private var store
+    @Environment(\.horizontalSizeClass) private var hSize
+    
+    private var isPadLike: Bool { hSize == .regular }
+    
+    private var columns: [GridItem] {
+        [
+            GridItem(.adaptive(minimum: isPadLike ? 180 : 150, maximum: 280), spacing: 18)
+        ]
+    }
+    
+    private var albumCardWidth: CGFloat {
+        let availableWidth = max(UIScreen.main.bounds.width - 32, 1)
+        return max((availableWidth - 10) / 2, 1)
+    }
+    
+    private var albumCardSize: CGSize {
+        CGSize(
+            width: albumCardWidth,
+            height: albumCardWidth * (252.0 / 180.0)
+        )
+    }
+    
+    private var albumColumns: [GridItem] {
+        [
+            GridItem(.fixed(albumCardSize.width), spacing: 10),
+            GridItem(.fixed(albumCardSize.width), spacing: 10)
+        ]
+    }
     
     var body: some View {
         NavigationStack {
@@ -40,58 +68,79 @@ struct SearchView: View {
 extension SearchView {
     
     var resultsList: some View {
-        List {
-            
-            
-            if !vm.designResults.isEmpty {
-                Section("Designs") {
-                    ForEach(vm.designResults) { design in
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                if !vm.designResults.isEmpty {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Designs")
+                            .font(.title3)
+                            .bold()
+                            .padding(.horizontal, 16)
                         
-                        NavigationLink {
-                            PreviewView(design: design)
-                        } label: {
-                            HStack(spacing: 12) {
-                                VStack(alignment: .leading) {
-                                    Text(design.designName)
-                                    
+                        DesignGridView(
+                            designs: vm.designResults,
+                            layoutMode: .grid,
+                            masonColumn: isPadLike ? 4 : 2,
+                            columns: columns,
+                            onAddTap: {},
+                            showsAddCard: false
+                        )
+                    }
+                }
+                
+                if !vm.albumResults.isEmpty {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Albums")
+                            .font(.title3)
+                            .bold()
+                            .padding(.horizontal, 16)
+                        
+                        LazyVGrid(columns: albumColumns, spacing: 10) {
+                            ForEach(vm.albumResults) { album in
+                                let albumDesigns = store.designs.filter {
+                                    album.albumDesignIDs.contains($0.id)
+                                }
+                                let thumbnail = albumDesigns.first?.thumbnailPath ?? "photo"
+                                
+                                NavigationLink {
+                                    AlbumPreviewView(album: album)
+                                        .toolbar(.hidden, for: .tabBar)
+                                } label: {
+                                    ZStack(alignment: .bottomLeading) {
+                                        DesignImageView(path: thumbnail)
+                                            .scaledToFill()
+                                            .frame(width: albumCardSize.width, height: albumCardSize.height)
+
+                                        HStack {
+                                            Text(album.albumName)
+                                                .font(.headline)
+                                                .fontWeight(.semibold)
+                                                .foregroundStyle(.white)
+                                                .lineLimit(1)
+                                            Spacer()
+                                        }
+                                        .padding(12)
+                                        .background(
+                                            LinearGradient(
+                                                colors: [.clear, .black.opacity(0.6)],
+                                                startPoint: .top,
+                                                endPoint: .bottom
+                                            )
+                                        )
+                                    }
+                                    .frame(width: albumCardSize.width, height: albumCardSize.height)
+                                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                                    .shadow(radius: 5)
                                 }
                             }
                         }
+                        .padding(.horizontal, 16)
                     }
                 }
             }
-            
-            
-            if !vm.albumResults.isEmpty {
-                Section("Albums") {
-                    ForEach(vm.albumResults) { album in
-                        
-                        NavigationLink {
-                            AlbumPreviewView(album: album)
-                        } label: {
-                            
-                            HStack(spacing: 12) {
-                                
-                                if let uiImage = DesignImageLoader.image(for: album.thumbnailPath) {
-                                    Image(uiImage: uiImage)
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 50, height: 50)
-                                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                                } else {
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(Color.gray.opacity(0.2))
-                                        .frame(width: 50, height: 50)
-                                        .overlay(Image(systemName: "photo.on.rectangle"))
-                                }
-                                
-                                Text(album.albumName)
-                            }
-                        }
-                    }
-                }
-            }
+            .padding(.vertical, 16)
         }
+        .background(Color(.systemGroupedBackground))
     }
 }
 extension SearchView {
