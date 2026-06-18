@@ -66,6 +66,7 @@ struct EditorView: View {
 
     @State var savedStickers: [UIImage] = []
     @State var selectedSticker: UIImage?
+    @State var selectedEmoji: String?
     @State var recentStickers: [UIImage] = []
 
     @State var drawingCanvas = PKCanvasView()
@@ -85,6 +86,11 @@ struct EditorView: View {
             }
             .onChange(of: selectedSticker) { _, _ in
                 addSelectedStickerToCanvas()
+            }
+            .onChange(of: selectedEmoji) { _, emoji in
+                guard let emoji else { return }
+                addEmojiToCanvas(emoji)
+                selectedEmoji = nil
             }
             .sheet(isPresented: $showTemplateSheet) {
                 templateSheet
@@ -298,6 +304,12 @@ struct EditorView: View {
         }
     }
 
+    /// True when the currently targeted image action element is an emoji.
+    private var isEmojiActionTarget: Bool {
+        guard let id = imageActionTargetID else { return false }
+        return canvasImages.first(where: { $0.element.id == id })?.element.elementType == .emojis
+    }
+
     @ViewBuilder
     private var imageActionOverlay: some View {
         if showImageActionMenu {
@@ -308,32 +320,49 @@ struct EditorView: View {
                         dismissImageActions()
                     }
 
-                EditorImageActionMenu(
-                    onCrop: openCropSheet,
-                    onDoodle: {
-                        dismissImageActions()
-                        isDoodleActive = true
-                        applyFilterSelection(.doodle)
-                    },
-                    onFilters: openImageFilters,
-                    onBackground: {
-                        removeBackgroundFromSelectedImage()
-                    },
-                    onBorder: {
-                        openBorderEditor()
-                    },
-                    onDuplicate: {
-                        if let imageActionTargetID {
-                            duplicateLayer(imageActionTargetID)
+                if isEmojiActionTarget {
+                    // Emojis only get Duplicate + Delete
+                    EmojiActionMenu(
+                        onDuplicate: {
+                            if let imageActionTargetID {
+                                duplicateLayer(imageActionTargetID)
+                            }
+                        },
+                        onDelete: {
+                            if let imageActionTargetID {
+                                deleteLayer(imageActionTargetID)
+                            }
                         }
-                    },
-                    onDelete: {
-                        if let imageActionTargetID {
-                            deleteLayer(imageActionTargetID)
+                    )
+                    .position(imageActionMenuPosition)
+                } else {
+                    EditorImageActionMenu(
+                        onCrop: openCropSheet,
+                        onDoodle: {
+                            dismissImageActions()
+                            isDoodleActive = true
+                            applyFilterSelection(.doodle)
+                        },
+                        onFilters: openImageFilters,
+                        onBackground: {
+                            removeBackgroundFromSelectedImage()
+                        },
+                        onBorder: {
+                            openBorderEditor()
+                        },
+                        onDuplicate: {
+                            if let imageActionTargetID {
+                                duplicateLayer(imageActionTargetID)
+                            }
+                        },
+                        onDelete: {
+                            if let imageActionTargetID {
+                                deleteLayer(imageActionTargetID)
+                            }
                         }
-                    }
-                )
-                .position(imageActionMenuPosition)
+                    )
+                    .position(imageActionMenuPosition)
+                }
             }
         }
     }
@@ -342,7 +371,8 @@ struct EditorView: View {
         Sticker(
             savedStickers: $savedStickers,
             selectedSticker: $selectedSticker,
-            recentStickers: $recentStickers
+            recentStickers: $recentStickers,
+            selectedEmoji: $selectedEmoji
         )
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)

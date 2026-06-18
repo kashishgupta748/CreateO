@@ -100,3 +100,45 @@ struct EditorImageActionMenu: View {
         )
     }
 }
+
+// MARK: - Restricted menu shown only for emoji elements
+struct EmojiActionMenu: View {
+    let onDuplicate: () -> Void
+    let onDelete: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            emojiMenuRow(symbol: "doc.on.doc", title: "Duplicate", action: onDuplicate)
+
+            Divider()
+                .padding(.horizontal, 18)
+
+            emojiMenuRow(symbol: "trash", title: "Delete", isDestructive: true, action: onDelete)
+        }
+        .frame(width: 220)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .shadow(color: .black.opacity(0.1), radius: 14, y: 8)
+    }
+
+    private func emojiMenuRow(
+        symbol: String,
+        title: String,
+        isDestructive: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 18) {
+                Image(systemName: symbol)
+                    .font(.system(size: 21, weight: .regular))
+                    .frame(width: 28)
+                Text(title)
+                    .font(.system(size: 17))
+                Spacer()
+            }
+            .foregroundStyle(isDestructive ? .red : .primary)
+            .padding(.horizontal, 20)
+            .frame(height: 58)
+        }
+        .buttonStyle(.plain)
+    }
+}
