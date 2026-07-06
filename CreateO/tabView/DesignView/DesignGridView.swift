@@ -78,7 +78,6 @@ struct DesignGridView: View {
 }
 
 struct DesignAddCard: View {
-    @Environment(FirstDesignGuideManager.self) private var guideManager
 
     let size: CGSize
     let action: () -> Void
@@ -112,10 +111,6 @@ struct DesignAddCard: View {
             )
             .shadow(color: .black.opacity(0.12), radius: 16, y: 9)
         }
-        .guideHighlight(
-            .homeCreate,
-            isActive: guideManager.currentStep == .homeCreate
-        )
         .buttonStyle(.plain)
     }
 }

@@ -18,7 +18,6 @@ struct EditorView: View {
 
     @Environment(DataStore.self) var designStore
     @Environment(AuthManager.self) var authManager
-    @Environment(FirstDesignGuideManager.self) var guideManager
     @Environment(\.dismiss) var dismiss
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
@@ -139,7 +138,6 @@ struct EditorView: View {
             }
             .onAppear {
                 syncSelectedTextSizeDraft()
-                guideManager.showIfNeeded(.editorColors)
             }
     }
 

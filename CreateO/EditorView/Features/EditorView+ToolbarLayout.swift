@@ -67,7 +67,6 @@ extension EditorView {
                     completeActiveEditorMode()
                 } else {
                     dismissImageActions()
-                    guideManager.show(.saveDesign)
                     showSaveSheet = true
                 }
             },

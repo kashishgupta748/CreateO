@@ -32,7 +32,6 @@ extension EditorView {
             addToRecent(image)
             showSheet = false
             selectedSticker = nil
-            guideManager.advance(from: .editorStickers)
         }
     }
 
@@ -53,11 +52,6 @@ extension EditorView {
 
         canvasImages[index].element.borderWidth = borderDraftWidth
         canvasImages[index].element.borderColor = borderDraftColor
-
-        if guideManager.currentStep == .addBorder,
-           borderDraftWidth > 0 || borderDraftColor != borderOriginalColor {
-            guideManager.advance(from: .addBorder)
-        }
     }
 
     func openBorderEditor() {
@@ -184,28 +178,23 @@ extension EditorView {
     func completeActiveEditorMode() {
         if focusedTextID != nil {
             focusedTextID = nil
-            guideManager.advance(from: .editorText)
             return
         }
         if isBrushActive {
             isBrushActive = false
             dismissImageActions()
-            guideManager.advance(from: .editorAdjustments)
             return
         }
         if isBorderActive {
             commitBorderEditing()
-            guideManager.advance(from: .addBorder)
             return
         }
         if isFilterActive {
             isFilterActive = false
-            guideManager.advance(from: .editorFilters)
             return
         }
         if isDoodleActive {
             isDoodleActive = false
-            guideManager.advance(from: .editorDoodle)
         }
     }
 
@@ -222,21 +211,6 @@ extension EditorView {
             selectedFilter = filter
             applyFilter(filter)
         }
-
-        if guideManager.currentStep == .editorFilters, filter != .original {
-            isFilterActive = false
-            guideManager.advance(from: .editorFilters)
-        } else if guideManager.currentStep == .editorDoodle, filter == .doodle {
-            isDoodleActive = false
-            guideManager.advance(from: .editorDoodle)
-        }
-    }
-
-    func brushDrawingUsedForGuide() {
-        guard guideManager.currentStep == .editorAdjustments else { return }
-        isBrushActive = false
-        dismissImageActions()
-        guideManager.advance(from: .editorAdjustments)
     }
 
     func applyFilter(_ filter: Filter) {

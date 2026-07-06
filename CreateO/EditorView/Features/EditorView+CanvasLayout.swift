@@ -43,7 +43,6 @@ extension EditorView {
             presentTextActions: presentTextActions,
             removeTextLayerIfEmpty: removeTextLayerIfEmpty,
             presentBrushActions: presentBrushActions,
-            brushDrawingUsedForGuide: brushDrawingUsedForGuide,
             openLayerSheet: openLayerSheet,
             beginHistoryTransaction: beginHistoryTransaction,
             endHistoryTransaction: endHistoryTransaction

@@ -30,7 +30,6 @@ extension EditorView {
             replaceBackgroundRemovedImage(liftedImage, for: targetImageID)
             selectedImageID = targetImageID
             backgroundRemovalImageID = nil
-            guideManager.advance(from: .removeBackground)
         }
     }
 

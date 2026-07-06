@@ -13,7 +13,6 @@ struct DesignView: View {
     @State private var showEditor = false
 
     @Environment(DataStore.self) var designStore
-    @Environment(FirstDesignGuideManager.self) private var guideManager
     @State public var layoutMode: LayoutMode = .grid
     @Environment(\.horizontalSizeClass) private var hSize
 
@@ -167,10 +166,6 @@ struct DesignView: View {
                                 .frame(height: 56)
                                 .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                         }
-                        .guideHighlight(
-                            .homeCreate,
-                            isActive: guideManager.currentStep == .homeCreate
-                        )
                         .frame(width: contentWidth)
                     }
                     .position(x: proxy.size.width / 2, y: buttonCenterY)
@@ -181,9 +176,6 @@ struct DesignView: View {
             .frame(width: proxy.size.width, height: proxy.size.height)
             .background(Color(.systemGroupedBackground))
             .scrollIndicators(.hidden)
-            .onAppear {
-                guideManager.showIfNeeded(.homeCreate)
-            }
         }
     }
 
@@ -191,7 +183,6 @@ struct DesignView: View {
 
     private func startBlankCanvas() {
         dismissAddOptionsThen {
-            guideManager.advance(from: .homeCreate)
             pendingEditorImages = []
             showEditor = true
         }
@@ -516,5 +507,4 @@ private struct SheetRow: View {
 
     DesignView()
         .environment(store)
-        .environment(FirstDesignGuideManager())
 }

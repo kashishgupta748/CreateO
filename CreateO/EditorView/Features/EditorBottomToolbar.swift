@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct EditorBottomToolbar: View {
-    @Environment(FirstDesignGuideManager.self) private var guideManager
 
     let items: [EditorToolbar.BottomToolbarItem]
     let onUpload: () -> Void
@@ -13,21 +12,13 @@ struct EditorBottomToolbar: View {
             }
             .frame(maxWidth: .infinity)
 
-            ScrollViewReader { scrollProxy in
-                ScrollView(.horizontal) {
-                    HStack(spacing: 10) {
-                        toolbarItems
-                    }
-                    .padding(.horizontal, 4)
+            ScrollView(.horizontal) {
+                HStack(spacing: 10) {
+                    toolbarItems
                 }
-                .scrollIndicators(.hidden)
-                .onAppear {
-                    scrollToActiveGuideItem(with: scrollProxy, animated: false)
-                }
-                .onChange(of: guideManager.currentStep?.id) { _, _ in
-                    scrollToActiveGuideItem(with: scrollProxy, animated: true)
-                }
+                .padding(.horizontal, 4)
             }
+            .scrollIndicators(.hidden)
         }
     }
 
@@ -37,74 +28,14 @@ struct EditorBottomToolbar: View {
             case .action(let action):
                 toolbarButton(symbol: action.symbol, title: action.title, action: action.action)
                     .id(action.id)
-                    .guideHighlight(
-                        guideAnchor(for: action.id),
-                        isActive: guideManager.currentStep?.anchor == guideAnchor(for: action.id)
-                    )
             case .upload:
                 uploadToolbarButton
                     .id("upload")
-                    .guideHighlight(
-                        .editorUpload,
-                        isActive: guideManager.currentStep?.anchor == .editorUpload
-                    )
             }
         }
     }
 
-    private func guideAnchor(for id: String) -> GuideAnchor {
-        switch id {
-        case "doodle":
-            return .editorDoodle
-        case "template":
-            return .editorColors
-        case "filter":
-            return .editorFilters
-        case "text":
-            return .editorText
-        case "sticker":
-            return .editorStickers
-        case "brush":
-            return .editorAdjustments
-        default:
-            return .editorAdjustments
-        }
-    }
 
-    private func itemID(for anchor: GuideAnchor?) -> String? {
-        switch anchor {
-        case .editorFilters:
-            return "filter"
-        case .editorDoodle:
-            return "doodle"
-        case .editorAdjustments:
-            return "brush"
-        case .editorUpload:
-            return "upload"
-        case .editorStickers:
-            return "sticker"
-        case .editorText:
-            return "text"
-        case .editorColors:
-            return "template"
-        default:
-            return nil
-        }
-    }
-
-    private func scrollToActiveGuideItem(with scrollProxy: ScrollViewProxy, animated: Bool) {
-        guard let itemID = itemID(for: guideManager.currentStep?.anchor) else { return }
-
-        DispatchQueue.main.async {
-            if animated {
-                withAnimation(.snappy(duration: 0.28)) {
-                    scrollProxy.scrollTo(itemID, anchor: .center)
-                }
-            } else {
-                scrollProxy.scrollTo(itemID, anchor: .center)
-            }
-        }
-    }
 
     private func toolbarButton(symbol: String, title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {

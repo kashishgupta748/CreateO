@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct EditorToolbar: ToolbarContent {
-    @Environment(FirstDesignGuideManager.self) private var guideManager
 
     let isAnyEditorModeActive: Bool
     let canUndo: Bool
@@ -71,10 +70,6 @@ struct EditorToolbar: ToolbarContent {
                     }
                     .contentShape(Circle())
             }
-            .guideHighlight(
-                .editorSave,
-                isActive: guideManager.currentStep == .saveDesign
-            )
             .buttonStyle(.plain)
             .accessibilityLabel(isAnyEditorModeActive ? "Done" : "Save")
         }
