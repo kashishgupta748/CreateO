@@ -82,7 +82,7 @@ struct SignUpView: View {
                     title: "Email",
                     showsWarning: !email.isEmpty && !emailIsValid
                 ) {
-                    TextField("", text: $email)
+                    TextField("Enter your Email", text: $email)
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)
