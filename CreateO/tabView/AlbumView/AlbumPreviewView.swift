@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AlbumPreviewView: View {
     @Environment(DataStore.self) var designStore
+    @Environment(\.dismiss) var dismiss
     
     let album: Album
 
@@ -9,6 +10,15 @@ struct AlbumPreviewView: View {
     private let horizontalPadding: CGFloat = 16
     private let baselineCardWidth: CGFloat = 180
     private let baselineCardHeight: CGFloat = 252
+
+    // State for Design Picker (Add designs)
+    @State private var showDesignPicker = false
+    @State private var selectedDesignIDsForAdd: [UUID] = []
+
+    // State for Selection Mode
+    @State private var isSelectionMode = false
+    @State private var selectedDesignIDs: Set<UUID> = []
+    @State private var showDeleteConfirmation = false
 
     private var cardWidth: CGFloat {
         let availableWidth = max(UIScreen.main.bounds.width - (horizontalPadding * 2), 1)
@@ -29,70 +39,185 @@ struct AlbumPreviewView: View {
         ]
     }
 
+    var currentAlbum: Album {
+        designStore.albums.first(where: { $0.id == album.id }) ?? album
+    }
+
     var albumDesigns: [Design] {
         designStore.designs.filter {
-            album.albumDesignIDs.contains($0.id)
+            currentAlbum.albumDesignIDs.contains($0.id)
         }
     }
 
     var body: some View {
-        ScrollView {
-            if albumDesigns.isEmpty {
-                Text("No designs in this album")
-                    .padding()
-            } else {
-                LazyVGrid(columns: columns, spacing: gridSpacing) {
-                    ForEach(albumDesigns) { design in
-                        let currentDesign = designStore.designs.first(where: { $0.id == design.id }) ?? design
-                        NavigationLink {
-                            PreviewView(design: currentDesign)
-                        } label: {
-                            DesignImageView(path: currentDesign.thumbnailPath)
-                                .scaledToFill()
-                                .frame(width: cardSize.width, height: cardSize.height)
-                                .clipped()
-                                .clipShape(RoundedRectangle(cornerRadius: 20))
+        ZStack {
+            ScrollView {
+                if albumDesigns.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "photo.on.rectangle.angled")
+                            .font(.system(size: 48))
+                            .foregroundStyle(.secondary)
+                        Text("No designs in this album")
+                            .font(.headline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.top, 100)
+                } else {
+                    LazyVGrid(columns: columns, spacing: gridSpacing) {
+                        ForEach(albumDesigns) { design in
+                            let currentDesign = designStore.designs.first(where: { $0.id == design.id }) ?? design
+                            
+                            if isSelectionMode {
+                                let isSelected = selectedDesignIDs.contains(design.id)
+                                Button {
+                                    toggleSelection(design.id)
+                                } label: {
+                                    ZStack(alignment: .topTrailing) {
+                                        DesignImageView(path: currentDesign.thumbnailPath)
+                                            .scaledToFill()
+                                            .frame(width: cardSize.width, height: cardSize.height)
+                                            .clipped()
+                                            .clipShape(RoundedRectangle(cornerRadius: 20))
+                                            .overlay {
+                                                RoundedRectangle(cornerRadius: 20)
+                                                    .fill(isSelected ? Color.black.opacity(0.16) : .clear)
+                                            }
+                                            .overlay {
+                                                RoundedRectangle(cornerRadius: 20)
+                                                    .stroke(isSelected ? Color.accentColor : Color.black.opacity(0.08), lineWidth: isSelected ? 3 : 1)
+                                            }
+
+                                        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                                            .font(.system(size: 24, weight: .semibold))
+                                            .foregroundStyle(isSelected ? .white : .white.opacity(0.95), isSelected ? Color.accentColor : Color.black.opacity(0.20))
+                                            .padding(10)
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                            } else {
+                                NavigationLink {
+                                    PreviewView(design: currentDesign)
+                                } label: {
+                                    DesignImageView(path: currentDesign.thumbnailPath)
+                                        .scaledToFill()
+                                        .frame(width: cardSize.width, height: cardSize.height)
+                                        .clipped()
+                                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                                }
+                            }
                         }
                     }
+                    .padding(.horizontal, horizontalPadding)
+                    .padding(.vertical, 12)
                 }
-                .padding(.horizontal, horizontalPadding)
-                .padding(.vertical, 12)
+            }
+            .scrollIndicators(.visible)
+
+            // Selection Mode Actions Bar
+            if isSelectionMode {
+                VStack {
+                    Spacer()
+                    HStack(spacing: 40) {
+                        Button {
+                            removeFromAlbum()
+                        } label: {
+                            VStack(spacing: 6) {
+                                Image(systemName: "folder.badge.minus")
+                                    .font(.system(size: 20))
+                                Text("Remove")
+                                    .font(.caption2)
+                            }
+                            .foregroundStyle(Color.accentColor)
+                        }
+                        .disabled(selectedDesignIDs.isEmpty)
+                        .opacity(selectedDesignIDs.isEmpty ? 0.45 : 1.0)
+
+                        Button(role: .destructive) {
+                            showDeleteConfirmation = true
+                        } label: {
+                            VStack(spacing: 6) {
+                                Image(systemName: "trash")
+                                    .font(.system(size: 20))
+                                    .foregroundStyle(.red)
+                                Text("Delete")
+                                    .font(.caption2)
+                                    .foregroundStyle(.red)
+                            }
+                        }
+                        .disabled(selectedDesignIDs.isEmpty)
+                        .opacity(selectedDesignIDs.isEmpty ? 0.45 : 1.0)
+                    }
+                    .padding(.vertical, 14)
+                    .padding(.horizontal, 32)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .shadow(color: .black.opacity(0.12), radius: 12, y: 6)
+                    .padding(.bottom, 22)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .scrollIndicators(.visible)
-        .navigationTitle(album.albumName)
+        .navigationTitle(currentAlbum.albumName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem {
-                Menu {
+            if !isSelectionMode {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button {
+                        selectedDesignIDsForAdd = currentAlbum.albumDesignIDs
+                        showDesignPicker = true
                     } label: {
-                        Label("Add Designs", systemImage: "plus")
+                        Image(systemName: "plus")
                     }
-                    Button {
-                        
-                    } label: {
-                        Label("Rename Album", systemImage: "pencil")
-                    }
-
-                    Button(role: .destructive) {
-                        
-
-                    } label: {
-                        Label("Delete Album", systemImage: "trash")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis")
                 }
             }
 
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
+                    withAnimation(.snappy(duration: 0.25)) {
+                        isSelectionMode.toggle()
+                        selectedDesignIDs.removeAll()
+                    }
                 } label: {
-                    Text("Select")
+                    Text(isSelectionMode ? "Cancel" : "Select")
                 }
             }
         }
-       
+        .sheet(isPresented: $showDesignPicker) {
+            DesignPickerView(selectedDesignId: $selectedDesignIDsForAdd) { updatedIDs in
+                designStore.updateAlbumDesigns(albumID: album.id, designIDs: updatedIDs)
+            }
+            .presentationDetents([.large])
+        }
+        .alert("Delete Designs?", isPresented: $showDeleteConfirmation) {
+            Button("Delete", role: .destructive) {
+                deleteSelectedDesigns()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will permanently delete the selected designs from your device.")
+        }
+    }
+
+    private func toggleSelection(_ id: UUID) {
+        if selectedDesignIDs.contains(id) {
+            selectedDesignIDs.remove(id)
+        } else {
+            selectedDesignIDs.insert(id)
+        }
+    }
+
+    private func removeFromAlbum() {
+        let remainingIDs = currentAlbum.albumDesignIDs.filter { !selectedDesignIDs.contains($0) }
+        designStore.updateAlbumDesigns(albumID: album.id, designIDs: remainingIDs)
+        selectedDesignIDs.removeAll()
+        isSelectionMode = false
+    }
+
+    private func deleteSelectedDesigns() {
+        let designsToDelete = designStore.designs.filter { selectedDesignIDs.contains($0.id) }
+        for design in designsToDelete {
+            designStore.deleteDesign(design: design)
+        }
+        selectedDesignIDs.removeAll()
+        isSelectionMode = false
     }
 }

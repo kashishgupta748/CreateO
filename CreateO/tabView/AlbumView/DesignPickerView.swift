@@ -4,6 +4,7 @@ struct DesignPickerView: View {
     @Environment(DataStore.self) var designStore
     @Environment(\.dismiss) var dismiss
     @Binding var selectedDesignId: [UUID]
+    var onUse: (([UUID]) -> Void)? = nil
 
     private let columns = [
         GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 14)
@@ -51,6 +52,7 @@ struct DesignPickerView: View {
             }
             .safeAreaInset(edge: .bottom) {
                 Button {
+                    onUse?(selectedDesignId)
                     dismiss()
                 } label: {
                     Text(selectedDesignId.isEmpty ? "Select designs" : "Use \(selectedDesignId.count) design\(selectedDesignId.count == 1 ? "" : "s")")
