@@ -24,21 +24,24 @@ struct ContentView: View {
             TabView(selection: $selectedTab) {
                 Tab("Design", systemImage: "square.grid.2x2", value: CreatoTab.design.rawValue) {
                     DesignView()
+                        .toolbar(firstDesignGuideManager.isCompleted ? .visible : .hidden, for: .tabBar)
                 }
 
                 Tab("Album", systemImage: "photo.on.rectangle", value: CreatoTab.album.rawValue) {
                     AlbumView()
+                        .toolbar(firstDesignGuideManager.isCompleted ? .visible : .hidden, for: .tabBar)
                 }
 
                 Tab("Profile", systemImage: "person.circle", value: CreatoTab.profile.rawValue) {
                     ProfileView()
+                        .toolbar(firstDesignGuideManager.isCompleted ? .visible : .hidden, for: .tabBar)
                 }
 
                 Tab("Search", systemImage: "magnifyingglass", value: CreatoTab.search.rawValue) {
                     SearchView()
+                        .toolbar(firstDesignGuideManager.isCompleted ? .visible : .hidden, for: .tabBar)
                 }
             }
-            .toolbar(firstDesignGuideManager.isCompleted ? .visible : .hidden, for: .tabBar)
 
             if showStorySavedToast {
                 storySavedToast
