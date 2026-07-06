@@ -149,13 +149,13 @@ struct DesignCard: View {
                 }
                 .navigationTitle("Rename")
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Done") {
-                            showRenameSheet = false
-                        }
-                    }
-                }
+//                .toolbar {
+//                    ToolbarItem(placement: .topBarTrailing) {
+//                        Button("Done") {
+//                            showRenameSheet = false
+//                        }
+//                    }
+//                }
             }
             .presentationDetents([.medium])
         }
