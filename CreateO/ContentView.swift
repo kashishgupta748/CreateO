@@ -38,6 +38,7 @@ struct ContentView: View {
                     SearchView()
                 }
             }
+            .toolbar(firstDesignGuideManager.isCompleted ? .visible : .hidden, for: .tabBar)
 
             if showStorySavedToast {
                 storySavedToast
