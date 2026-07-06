@@ -417,6 +417,16 @@ class DataStore {
         }
     }
 
+    func renameAlbum(id: UUID, newName: String) {
+        if let index = albums.firstIndex(where: { $0.id == id }) {
+            albums[index].albumName = newName
+            albums[index].updatedAt  = Date()
+        }
+        if let authManager = currentAuthManager {
+            saveLocalCache(authManager: authManager)
+        }
+    }
+
     func toggleFavorite(id: UUID) {
         if let index = designs.firstIndex(where: { $0.id == id }) {
             designs[index].isFavorite.toggle()
