@@ -112,54 +112,56 @@ struct AlbumPreviewView: View {
                 }
             }
             .scrollIndicators(.visible)
-
-            // Selection Mode Actions Bar
-            if isSelectionMode {
-                VStack {
-                    Spacer()
-                    HStack(spacing: 40) {
-                        Button {
-                            removeFromAlbum()
-                        } label: {
-                            VStack(spacing: 6) {
-                                Image(systemName: "folder.badge.minus")
-                                    .font(.system(size: 20))
-                                Text("Remove")
-                                    .font(.caption2)
-                            }
-                            .foregroundStyle(Color.accentColor)
-                        }
-                        .disabled(selectedDesignIDs.isEmpty)
-                        .opacity(selectedDesignIDs.isEmpty ? 0.45 : 1.0)
-
-                        Button(role: .destructive) {
-                            showDeleteConfirmation = true
-                        } label: {
-                            VStack(spacing: 6) {
-                                Image(systemName: "trash")
-                                    .font(.system(size: 20))
-                                    .foregroundStyle(.red)
-                                Text("Delete")
-                                    .font(.caption2)
-                                    .foregroundStyle(.red)
-                            }
-                        }
-                        .disabled(selectedDesignIDs.isEmpty)
-                        .opacity(selectedDesignIDs.isEmpty ? 0.45 : 1.0)
-                    }
-                    .padding(.vertical, 14)
-                    .padding(.horizontal, 32)
-                    .background(.ultraThinMaterial, in: Capsule())
-                    .shadow(color: .black.opacity(0.12), radius: 12, y: 6)
-                    .padding(.bottom, 22)
-                }
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
         }
         .navigationTitle(currentAlbum.albumName)
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(isSelectionMode)
         .toolbar {
-            if !isSelectionMode {
+            if isSelectionMode {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") {
+                        withAnimation(.snappy(duration: 0.25)) {
+                            isSelectionMode = false
+                            selectedDesignIDs.removeAll()
+                        }
+                    }
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    let allSelected = selectedDesignIDs.count == albumDesigns.count
+                    Button(allSelected ? "Deselect All" : "Select All") {
+                        withAnimation(.snappy(duration: 0.25)) {
+                            if allSelected {
+                                selectedDesignIDs.removeAll()
+                            } else {
+                                selectedDesignIDs = Set(albumDesigns.map { $0.id })
+                            }
+                        }
+                    }
+                }
+
+                ToolbarItem(placement: .bottomBar) {
+                    Button {
+                        removeFromAlbum()
+                    } label: {
+                        Image(systemName: "folder.badge.minus")
+                    }
+                    .disabled(selectedDesignIDs.isEmpty)
+                }
+
+                ToolbarItem(placement: .bottomBar) {
+                    Spacer()
+                }
+
+                ToolbarItem(placement: .bottomBar) {
+                    Button(role: .destructive) {
+                        showDeleteConfirmation = true
+                    } label: {
+                        Image(systemName: "trash")
+                    }
+                    .disabled(selectedDesignIDs.isEmpty)
+                }
+            } else {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         selectedDesignIDsForAdd = currentAlbum.albumDesignIDs
@@ -168,19 +170,19 @@ struct AlbumPreviewView: View {
                         Image(systemName: "plus")
                     }
                 }
-            }
 
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    withAnimation(.snappy(duration: 0.25)) {
-                        isSelectionMode.toggle()
-                        selectedDesignIDs.removeAll()
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Select") {
+                        withAnimation(.snappy(duration: 0.25)) {
+                            isSelectionMode = true
+                            selectedDesignIDs.removeAll()
+                        }
                     }
-                } label: {
-                    Text(isSelectionMode ? "Cancel" : "Select")
                 }
             }
         }
+        .toolbar(isSelectionMode ? .hidden : .visible, for: .tabBar)
+        .toolbar(isSelectionMode ? .visible : .hidden, for: .bottomBar)
         .sheet(isPresented: $showDesignPicker) {
             DesignPickerView(selectedDesignId: $selectedDesignIDsForAdd) { updatedIDs in
                 designStore.updateAlbumDesigns(albumID: album.id, designIDs: updatedIDs)

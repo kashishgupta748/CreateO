@@ -9,32 +9,28 @@ struct SearchView: View {
     @State private var selectedAlbum: Album?
     
     @Environment(DataStore.self) private var store
-    @Environment(\.horizontalSizeClass) private var hSize
-    
-    private var isPadLike: Bool { hSize == .regular }
-    
-    private var columns: [GridItem] {
-        [
-            GridItem(.adaptive(minimum: isPadLike ? 180 : 150, maximum: 280), spacing: 18)
-        ]
+
+    private let gridSpacing: CGFloat = 10
+    private let horizontalPadding: CGFloat = 16
+    private let baselineCardWidth: CGFloat = 180
+    private let baselineCardHeight: CGFloat = 252
+
+    private var cardWidth: CGFloat {
+        let availableWidth = max(UIScreen.main.bounds.width - (horizontalPadding * 2), 1)
+        return max((availableWidth - gridSpacing) / 2, 1)
     }
-    
-    private var albumCardWidth: CGFloat {
-        let availableWidth = max(UIScreen.main.bounds.width - 32, 1)
-        return max((availableWidth - 10) / 2, 1)
-    }
-    
-    private var albumCardSize: CGSize {
+
+    private var cardSize: CGSize {
         CGSize(
-            width: albumCardWidth,
-            height: albumCardWidth * (252.0 / 180.0)
+            width: cardWidth,
+            height: cardWidth * (baselineCardHeight / baselineCardWidth)
         )
     }
-    
-    private var albumColumns: [GridItem] {
+
+    private var columns: [GridItem] {
         [
-            GridItem(.fixed(albumCardSize.width), spacing: 10),
-            GridItem(.fixed(albumCardSize.width), spacing: 10)
+            GridItem(.fixed(cardSize.width), spacing: gridSpacing),
+            GridItem(.fixed(cardSize.width), spacing: gridSpacing)
         ]
     }
     
@@ -74,17 +70,44 @@ extension SearchView {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Designs")
                             .font(.title3)
-                            .bold()
-                            .padding(.horizontal, 16)
+                            .fontWeight(.bold)
+                            .padding(.horizontal, horizontalPadding)
                         
-                        DesignGridView(
-                            designs: vm.designResults,
-                            layoutMode: .grid,
-                            masonColumn: isPadLike ? 4 : 2,
-                            columns: columns,
-                            onAddTap: {},
-                            showsAddCard: false
-                        )
+                        LazyVGrid(columns: columns, spacing: gridSpacing) {
+                            ForEach(vm.designResults) { design in
+                                NavigationLink {
+                                    PreviewView(design: design)
+                                } label: {
+                                    ZStack(alignment: .bottomLeading) {
+                                        DesignImageView(path: design.thumbnailPath)
+                                            .scaledToFill()
+                                            .frame(width: cardSize.width, height: cardSize.height)
+                                        
+                                        HStack {
+                                            Text(design.designName)
+                                                .font(.headline)
+                                                .fontWeight(.semibold)
+                                                .foregroundStyle(.white)
+                                                .lineLimit(1)
+                                            Spacer()
+                                        }
+                                        .padding(12)
+                                        .background(
+                                            LinearGradient(
+                                                colors: [.clear, .black.opacity(0.6)],
+                                                startPoint: .top,
+                                                endPoint: .bottom
+                                            )
+                                        )
+                                    }
+                                    .frame(width: cardSize.width, height: cardSize.height)
+                                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                                    .shadow(radius: 5)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.horizontal, horizontalPadding)
                     }
                 }
                 
@@ -92,10 +115,10 @@ extension SearchView {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Albums")
                             .font(.title3)
-                            .bold()
-                            .padding(.horizontal, 16)
+                            .fontWeight(.bold)
+                            .padding(.horizontal, horizontalPadding)
                         
-                        LazyVGrid(columns: albumColumns, spacing: 10) {
+                        LazyVGrid(columns: columns, spacing: gridSpacing) {
                             ForEach(vm.albumResults) { album in
                                 let albumDesigns = store.designs.filter {
                                     album.albumDesignIDs.contains($0.id)
@@ -104,13 +127,12 @@ extension SearchView {
                                 
                                 NavigationLink {
                                     AlbumPreviewView(album: album)
-                                        .toolbar(.hidden, for: .tabBar)
                                 } label: {
                                     ZStack(alignment: .bottomLeading) {
                                         DesignImageView(path: thumbnail)
                                             .scaledToFill()
-                                            .frame(width: albumCardSize.width, height: albumCardSize.height)
-
+                                            .frame(width: cardSize.width, height: cardSize.height)
+                                        
                                         HStack {
                                             Text(album.albumName)
                                                 .font(.headline)
@@ -128,19 +150,19 @@ extension SearchView {
                                             )
                                         )
                                     }
-                                    .frame(width: albumCardSize.width, height: albumCardSize.height)
+                                    .frame(width: cardSize.width, height: cardSize.height)
                                     .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
                                     .shadow(radius: 5)
                                 }
+                                .buttonStyle(.plain)
                             }
                         }
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, horizontalPadding)
                     }
                 }
             }
             .padding(.vertical, 16)
         }
-        .background(Color(.systemGroupedBackground))
     }
 }
 extension SearchView {
