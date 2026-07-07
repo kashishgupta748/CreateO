@@ -10,6 +10,7 @@ class DataStore {
 
     var designs: [Design] = []
     var albums: [Album] = []
+    var sharedAlbums: [SharedAlbum] = []
 
     // Set to true once bootstrap() has resolved auth and loaded data.
     private(set) var isReady = false
@@ -93,6 +94,7 @@ class DataStore {
     private func loadDummyData() {
         designs = Self.makeDummyDesigns()
         albums = Self.makeDummyAlbums(from: designs)
+        sharedAlbums = Self.makeDummySharedAlbums(from: designs)
     }
 
     // MARK: - Local cache (authenticated users only)
@@ -115,6 +117,15 @@ class DataStore {
         } else {
             albums = []
         }
+
+        if let savedSharedAlbums = LocalFileService.load(
+            [SharedAlbum].self,
+            fromFile: cacheFilename(prefix: "shared_albums", authManager: authManager)
+        ) {
+            sharedAlbums = savedSharedAlbums
+        } else {
+            sharedAlbums = []
+        }
     }
 
     private func saveLocalCache(authManager: AuthManager) {
@@ -126,6 +137,10 @@ class DataStore {
         LocalFileService.save(
             albums,
             toFile: cacheFilename(prefix: "albums", authManager: authManager)
+        )
+        LocalFileService.save(
+            sharedAlbums,
+            toFile: cacheFilename(prefix: "shared_albums", authManager: authManager)
         )
     }
 
@@ -485,6 +500,352 @@ class DataStore {
               FileManager.default.fileExists(atPath: projectURL.path) else { return }
         try? FileManager.default.removeItem(at: projectURL)
     }
+
+    // MARK: - Shared Album Mutations
+
+    func createSharedAlbum(named name: String, initialDesignIDs: [UUID], authManager: AuthManager) -> UUID {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let albumName = trimmedName.isEmpty ? "Untitled Shared Album" : trimmedName
+        
+        let selectedDesign = designs.filter { initialDesignIDs.contains($0.id) }
+        let thumbnail = selectedDesign.first?.thumbnailPath ?? ""
+        
+        let currentUserId = authManager.currentUserID ?? UUID()
+        let currentUserEmail = authManager.currentUserEmail ?? "guest@createo.app"
+        let currentUserName = currentUserEmail.components(separatedBy: "@").first ?? "Guest User"
+        
+        let currentCollaborator = Collaborator(
+            id: currentUserId,
+            name: currentUserName.capitalized,
+            email: currentUserEmail,
+            avatarColorHex: "#26A69A",
+            isCurrentUser: true
+        )
+        
+        let albumID = UUID()
+        
+        let newSharedAlbum = SharedAlbum(
+            id: albumID,
+            albumName: albumName,
+            ownerName: currentUserName.capitalized,
+            ownerID: currentUserId,
+            createdAt: Date(),
+            updatedAt: nil,
+            thumbnailPath: thumbnail,
+            designIDs: initialDesignIDs,
+            collaborators: [currentCollaborator],
+            activities: [
+                AlbumActivity(
+                    id: UUID(),
+                    userName: currentUserName.capitalized,
+                    userEmail: currentUserEmail,
+                    activityType: "created",
+                    detail: "",
+                    timestamp: Date()
+                )
+            ]
+        )
+        
+        sharedAlbums.append(newSharedAlbum)
+        saveLocalCache(authManager: authManager)
+        return albumID
+    }
+
+    func shareExistingAlbum(album: Album, authManager: AuthManager) -> UUID {
+        // If it's already a shared album, return its ID
+        if let existing = sharedAlbums.first(where: { $0.id == album.id }) {
+            return existing.id
+        }
+        
+        let currentUserId = authManager.currentUserID ?? UUID()
+        let currentUserEmail = authManager.currentUserEmail ?? "guest@createo.app"
+        let currentUserName = currentUserEmail.components(separatedBy: "@").first ?? "Guest User"
+        
+        let currentCollaborator = Collaborator(
+            id: currentUserId,
+            name: currentUserName.capitalized,
+            email: currentUserEmail,
+            avatarColorHex: "#26A69A",
+            isCurrentUser: true
+        )
+        
+        let newSharedAlbum = SharedAlbum(
+            id: album.id,
+            albumName: album.albumName,
+            ownerName: currentUserName.capitalized,
+            ownerID: currentUserId,
+            createdAt: album.createdAt,
+            updatedAt: Date(),
+            thumbnailPath: album.thumbnailPath,
+            designIDs: album.albumDesignIDs,
+            collaborators: [currentCollaborator],
+            activities: [
+                AlbumActivity(
+                    id: UUID(),
+                    userName: currentUserName.capitalized,
+                    userEmail: currentUserEmail,
+                    activityType: "created",
+                    detail: "",
+                    timestamp: Date()
+                )
+            ]
+        )
+        
+        sharedAlbums.append(newSharedAlbum)
+        saveLocalCache(authManager: authManager)
+        return album.id
+    }
+
+    func joinSharedAlbum(byLink linkOrId: String, authManager: AuthManager) -> (success: Bool, albumName: String) {
+        var targetIdString = ""
+        var targetName = ""
+        
+        if let url = URL(string: linkOrId.trimmingCharacters(in: .whitespacesAndNewlines)),
+           let components = URLComponents(url: url, resolvingAgainstBaseURL: true),
+           let queryItems = components.queryItems {
+            targetIdString = queryItems.first(where: { $0.name == "id" })?.value ?? ""
+            targetName = queryItems.first(where: { $0.name == "name" })?.value ?? ""
+        } else {
+            targetIdString = linkOrId.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        
+        guard let albumID = UUID(uuidString: targetIdString) else {
+            return (false, "")
+        }
+        
+        let resolvedName = targetName.isEmpty ? "Collaborative Album" : targetName
+        
+        // Check if already joined
+        if let index = sharedAlbums.firstIndex(where: { $0.id == albumID }) {
+            let currentUserEmail = authManager.currentUserEmail ?? "guest@createo.app"
+            let currentUserId = authManager.currentUserID ?? UUID()
+            let currentUserName = currentUserEmail.components(separatedBy: "@").first ?? "Guest User"
+            
+            if !sharedAlbums[index].collaborators.contains(where: { $0.email == currentUserEmail }) {
+                let currentCollaborator = Collaborator(
+                    id: currentUserId,
+                    name: currentUserName.capitalized,
+                    email: currentUserEmail,
+                    avatarColorHex: "#FFB74D",
+                    isCurrentUser: true
+                )
+                sharedAlbums[index].collaborators.append(currentCollaborator)
+                sharedAlbums[index].activities.append(
+                    AlbumActivity(
+                        id: UUID(),
+                        userName: currentUserName.capitalized,
+                        userEmail: currentUserEmail,
+                        activityType: "joined",
+                        detail: "",
+                        timestamp: Date()
+                    )
+                )
+                saveLocalCache(authManager: authManager)
+            }
+            return (true, sharedAlbums[index].albumName)
+        }
+        
+        let currentUserId = authManager.currentUserID ?? UUID()
+        let currentUserEmail = authManager.currentUserEmail ?? "guest@createo.app"
+        let currentUserName = currentUserEmail.components(separatedBy: "@").first ?? "Guest User"
+        
+        let currentCollaborator = Collaborator(
+            id: currentUserId,
+            name: currentUserName.capitalized,
+            email: currentUserEmail,
+            avatarColorHex: "#26A69A",
+            isCurrentUser: true
+        )
+        
+        let ownerID = UUID()
+        let ownerName = "Jane Miller"
+        
+        let randomDesigns = Array(designs.shuffled().prefix(3))
+        let designIDs = randomDesigns.map(\.id)
+        let thumbnail = randomDesigns.first?.thumbnailPath ?? ""
+        
+        let newSharedAlbum = SharedAlbum(
+            id: albumID,
+            albumName: resolvedName,
+            ownerName: ownerName,
+            ownerID: ownerID,
+            createdAt: Date().addingTimeInterval(-86400),
+            updatedAt: Date(),
+            thumbnailPath: thumbnail,
+            designIDs: designIDs,
+            collaborators: [
+                Collaborator(id: ownerID, name: ownerName, email: "jane@createo.design", avatarColorHex: "#EC407A", isCurrentUser: false),
+                currentCollaborator
+            ],
+            activities: [
+                AlbumActivity(id: UUID(), userName: ownerName, userEmail: "jane@createo.design", activityType: "created", detail: "", timestamp: Date().addingTimeInterval(-86400)),
+                AlbumActivity(id: UUID(), userName: ownerName, userEmail: "jane@createo.design", activityType: "added_design", detail: randomDesigns.first?.designName ?? "Design", timestamp: Date().addingTimeInterval(-86400 + 3600)),
+                AlbumActivity(id: UUID(), userName: currentUserName.capitalized, userEmail: currentUserEmail, activityType: "joined", detail: "", timestamp: Date())
+            ]
+        )
+        
+        sharedAlbums.append(newSharedAlbum)
+        saveLocalCache(authManager: authManager)
+        return (true, resolvedName)
+    }
+
+    func addDesignToSharedAlbum(albumID: UUID, designID: UUID, authManager: AuthManager) {
+        guard let index = sharedAlbums.firstIndex(where: { $0.id == albumID }) else { return }
+        
+        if !sharedAlbums[index].designIDs.contains(designID) {
+            sharedAlbums[index].designIDs.append(designID)
+        }
+        
+        if let design = designs.first(where: { $0.id == designID }) {
+            sharedAlbums[index].thumbnailPath = design.thumbnailPath
+        }
+        
+        let currentUserEmail = authManager.currentUserEmail ?? "guest@createo.app"
+        let currentUserName = currentUserEmail.components(separatedBy: "@").first ?? "Guest User"
+        let designName = designs.first(where: { $0.id == designID })?.designName ?? "a design"
+        
+        sharedAlbums[index].activities.append(
+            AlbumActivity(
+                id: UUID(),
+                userName: currentUserName.capitalized,
+                userEmail: currentUserEmail,
+                activityType: "added_design",
+                detail: designName,
+                timestamp: Date()
+            )
+        )
+        
+        sharedAlbums[index].updatedAt = Date()
+        saveLocalCache(authManager: authManager)
+    }
+
+    func removeDesignFromSharedAlbum(albumID: UUID, designID: UUID, authManager: AuthManager) {
+        guard let index = sharedAlbums.firstIndex(where: { $0.id == albumID }) else { return }
+        
+        let designName = designs.first(where: { $0.id == designID })?.designName ?? "a design"
+        sharedAlbums[index].designIDs.removeAll { $0 == designID }
+        
+        if let firstID = sharedAlbums[index].designIDs.first,
+           let design = designs.first(where: { $0.id == firstID }) {
+            sharedAlbums[index].thumbnailPath = design.thumbnailPath
+        } else {
+            sharedAlbums[index].thumbnailPath = ""
+        }
+        
+        let currentUserEmail = authManager.currentUserEmail ?? "guest@createo.app"
+        let currentUserName = currentUserEmail.components(separatedBy: "@").first ?? "Guest User"
+        
+        sharedAlbums[index].activities.append(
+            AlbumActivity(
+                id: UUID(),
+                userName: currentUserName.capitalized,
+                userEmail: currentUserEmail,
+                activityType: "removed_design",
+                detail: designName,
+                timestamp: Date()
+            )
+        )
+        
+        sharedAlbums[index].updatedAt = Date()
+        saveLocalCache(authManager: authManager)
+    }
+
+    func renameSharedAlbum(albumID: UUID, newName: String, authManager: AuthManager) {
+        guard let index = sharedAlbums.firstIndex(where: { $0.id == albumID }) else { return }
+        let trimmedName = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else { return }
+        
+        sharedAlbums[index].albumName = trimmedName
+        
+        let currentUserEmail = authManager.currentUserEmail ?? "guest@createo.app"
+        let currentUserName = currentUserEmail.components(separatedBy: "@").first ?? "Guest User"
+        
+        sharedAlbums[index].activities.append(
+            AlbumActivity(
+                id: UUID(),
+                userName: currentUserName.capitalized,
+                userEmail: currentUserEmail,
+                activityType: "renamed_album",
+                detail: trimmedName,
+                timestamp: Date()
+            )
+        )
+        
+        sharedAlbums[index].updatedAt = Date()
+        saveLocalCache(authManager: authManager)
+    }
+
+    func deleteSharedAlbum(albumID: UUID, authManager: AuthManager) {
+        sharedAlbums.removeAll { $0.id == albumID }
+        saveLocalCache(authManager: authManager)
+    }
+
+    func simulateCollaboratorAction(albumID: UUID, authManager: AuthManager) {
+        guard let index = sharedAlbums.firstIndex(where: { $0.id == albumID }) else { return }
+        
+        let mockNames = ["Sophia Martinez", "Liam Vance", "Emma Watson", "Alex Turner", "Chloe Bennett", "Daniel Craig"]
+        let mockEmails = ["sophia@createo.design", "liam@createo.design", "emma@createo.design", "alex@createo.design", "chloe@createo.design", "daniel@createo.design"]
+        let mockColors = ["#E91E63", "#9C27B0", "#673AB7", "#3F51B5", "#2196F3", "#00BCD4", "#4CAF50", "#FFC107", "#FF5722"]
+        
+        let randIdx = Int.random(in: 0..<mockNames.count)
+        let name = mockNames[randIdx]
+        let email = mockEmails[randIdx]
+        let color = mockColors.randomElement() ?? "#E91E63"
+        
+        let newCollab = Collaborator(id: UUID(), name: name, email: email, avatarColorHex: color, isCurrentUser: false)
+        
+        if !sharedAlbums[index].collaborators.contains(where: { $0.email == email }) {
+            sharedAlbums[index].collaborators.append(newCollab)
+        }
+        
+        sharedAlbums[index].activities.append(
+            AlbumActivity(
+                id: UUID(),
+                userName: name,
+                userEmail: email,
+                activityType: "joined",
+                detail: "",
+                timestamp: Date()
+            )
+        )
+        saveLocalCache(authManager: authManager)
+        
+        Task {
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            
+            await MainActor.run {
+                guard let idx = self.sharedAlbums.firstIndex(where: { $0.id == albumID }) else { return }
+                let localDesigns = self.designs
+                guard !localDesigns.isEmpty else { return }
+                
+                let currentDesignIDs = self.sharedAlbums[idx].designIDs
+                let candidateDesigns = localDesigns.filter { !currentDesignIDs.contains($0.id) }
+                let designToAdd = candidateDesigns.randomElement() ?? localDesigns.randomElement()!
+                
+                self.sharedAlbums[idx].designIDs.append(designToAdd.id)
+                self.sharedAlbums[idx].thumbnailPath = designToAdd.thumbnailPath
+                
+                self.sharedAlbums[idx].activities.append(
+                    AlbumActivity(
+                        id: UUID(),
+                        userName: name,
+                        userEmail: email,
+                        activityType: "added_design",
+                        detail: designToAdd.designName,
+                        timestamp: Date()
+                    )
+                )
+                self.sharedAlbums[idx].updatedAt = Date()
+                self.saveLocalCache(authManager: authManager)
+                
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("SharedAlbumUpdate"),
+                    object: nil,
+                    userInfo: ["albumName": self.sharedAlbums[idx].albumName, "collaboratorName": name, "designName": designToAdd.designName]
+                )
+            }
+        }
+    }
 }
 
 // MARK: - Dummy data factory (guest / unauthenticated preview)
@@ -561,6 +922,59 @@ private extension DataStore {
                 albumDesignIDs: [
                     designs[1].id, designs[7].id, designs[15].id,
                     designs[27].id, designs[31].id
+                ]
+            )
+        ]
+    }
+
+    static func makeDummySharedAlbums(from designs: [Design]) -> [SharedAlbum] {
+        guard designs.count >= 32 else { return [] }
+        let ownerID = UUID()
+        let colleague1ID = UUID()
+        let colleague2ID = UUID()
+        
+        return [
+            SharedAlbum(
+                id: UUID(uuidString: "7e504c5a-d1a1-432d-947d-81532eeadbf7") ?? UUID(),
+                albumName: "Brand Collaboration",
+                ownerName: "Sarah Jenkins",
+                ownerID: ownerID,
+                createdAt: Date().addingTimeInterval(-86400 * 3),
+                updatedAt: Date().addingTimeInterval(-86400 * 1),
+                thumbnailPath: designs[2].thumbnailPath,
+                designIDs: [designs[2].id, designs[4].id, designs[6].id],
+                collaborators: [
+                    Collaborator(id: ownerID, name: "Sarah Jenkins", email: "sarah@createo.design", avatarColorHex: "#FF7043", isCurrentUser: false),
+                    Collaborator(id: colleague1ID, name: "Marcus Chen", email: "marcus@createo.design", avatarColorHex: "#26A69A", isCurrentUser: false),
+                    Collaborator(id: colleague2ID, name: "Emma Watson", email: "emma@createo.design", avatarColorHex: "#5C6BC0", isCurrentUser: false)
+                ],
+                activities: [
+                    AlbumActivity(id: UUID(), userName: "Sarah Jenkins", userEmail: "sarah@createo.design", activityType: "created", detail: "", timestamp: Date().addingTimeInterval(-86400 * 3)),
+                    AlbumActivity(id: UUID(), userName: "Marcus Chen", userEmail: "marcus@createo.design", activityType: "joined", detail: "", timestamp: Date().addingTimeInterval(-86400 * 2)),
+                    AlbumActivity(id: UUID(), userName: "Sarah Jenkins", userEmail: "sarah@createo.design", activityType: "added_design", detail: designs[2].designName, timestamp: Date().addingTimeInterval(-86400 * 2)),
+                    AlbumActivity(id: UUID(), userName: "Emma Watson", userEmail: "emma@createo.design", activityType: "joined", detail: "", timestamp: Date().addingTimeInterval(-86400 * 1)),
+                    AlbumActivity(id: UUID(), userName: "Marcus Chen", userEmail: "marcus@createo.design", activityType: "added_design", detail: designs[4].designName, timestamp: Date().addingTimeInterval(-86400 * 1 - 3600)),
+                    AlbumActivity(id: UUID(), userName: "Emma Watson", userEmail: "emma@createo.design", activityType: "added_design", detail: designs[6].designName, timestamp: Date().addingTimeInterval(-86400 * 1))
+                ]
+            ),
+            SharedAlbum(
+                id: UUID(uuidString: "bd675547-0b1a-4c28-9774-4b533a1e9447") ?? UUID(),
+                albumName: "UI/UX Feedback",
+                ownerName: "Liam Vance",
+                ownerID: UUID(),
+                createdAt: Date().addingTimeInterval(-86400 * 5),
+                updatedAt: Date().addingTimeInterval(-86400 * 2),
+                thumbnailPath: designs[8].thumbnailPath,
+                designIDs: [designs[8].id, designs[10].id],
+                collaborators: [
+                    Collaborator(id: UUID(), name: "Liam Vance", email: "liam@creato.app", avatarColorHex: "#AB47BC", isCurrentUser: false),
+                    Collaborator(id: UUID(), name: "David Kim", email: "david@creato.app", avatarColorHex: "#29B6F6", isCurrentUser: false)
+                ],
+                activities: [
+                    AlbumActivity(id: UUID(), userName: "Liam Vance", userEmail: "liam@creato.app", activityType: "created", detail: "", timestamp: Date().addingTimeInterval(-86400 * 5)),
+                    AlbumActivity(id: UUID(), userName: "David Kim", userEmail: "david@creato.app", activityType: "joined", detail: "", timestamp: Date().addingTimeInterval(-86400 * 4)),
+                    AlbumActivity(id: UUID(), userName: "Liam Vance", userEmail: "liam@creato.app", activityType: "added_design", detail: designs[8].designName, timestamp: Date().addingTimeInterval(-86400 * 3)),
+                    AlbumActivity(id: UUID(), userName: "David Kim", userEmail: "david@creato.app", activityType: "added_design", detail: designs[10].designName, timestamp: Date().addingTimeInterval(-86400 * 2))
                 ]
             )
         ]

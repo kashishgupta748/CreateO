@@ -101,6 +101,12 @@ struct AlbumView: View {
             .navigationTitle("Albums")
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
+                    NavigationLink {
+                        SharedAlbumsListView()
+                    } label: {
+                        Image(systemName: "person.2.fill")
+                    }
+
                     Button {
                         showAlbumSheet = true
                     } label: {
