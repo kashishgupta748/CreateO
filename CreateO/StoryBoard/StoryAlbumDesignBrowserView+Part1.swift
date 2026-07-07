@@ -27,9 +27,6 @@ extension StoryAlbumDesignBrowserView {
                             selectedIDs = Set(albumDesigns.map(\.id))
                         }
                     }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(.ultraThinMaterial, in: Capsule())
                 }
 
                 ToolbarItem(placement: .principal) {
@@ -43,8 +40,6 @@ extension StoryAlbumDesignBrowserView {
                         selectedIDs.removeAll()
                     } label: {
                         Image(systemName: "xmark")
-                            .frame(width: 34, height: 34)
-                            .background(.ultraThinMaterial, in: Circle())
                     }
 
                     Button {
@@ -54,8 +49,6 @@ extension StoryAlbumDesignBrowserView {
                         onComplete(output)
                     } label: {
                         Image(systemName: "checkmark")
-                            .frame(width: 34, height: 34)
-                            .background(.ultraThinMaterial, in: Circle())
                     }
                     .disabled(selectedIDs.isEmpty)
                 }
@@ -64,9 +57,7 @@ extension StoryAlbumDesignBrowserView {
                     Button {
                         dismiss()
                     } label: {
-                        Image(systemName: "chevron.right")
-                            .frame(width: 34, height: 34)
-                            .background(.ultraThinMaterial, in: Circle())
+                        Image(systemName: "chevron.left")
                     }
                 }
 
@@ -88,16 +79,11 @@ extension StoryAlbumDesignBrowserView {
                         }
                     } label: {
                         Image(systemName: "ellipsis")
-                            .frame(width: 34, height: 34)
-                            .background(.ultraThinMaterial, in: Circle())
                     }
 
                     Button("Select") {
                         isSelecting = true
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(.ultraThinMaterial, in: Capsule())
                 }
             }
         }

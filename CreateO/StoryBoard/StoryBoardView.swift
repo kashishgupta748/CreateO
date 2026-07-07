@@ -89,6 +89,7 @@ struct StoryBoard: View {
                 insert(designs: selected, at: pendingInsertionIndex)
             }
             .environment(designStore)
+            .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showAnimateSheet) {
             animateSheet
