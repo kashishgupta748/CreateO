@@ -12,12 +12,10 @@ enum CreatoTab: String {
 struct ContentView: View {
     @AppStorage("creato.selectedTab") private var selectedTab = CreatoTab.design.rawValue
     @AppStorage("creato.storySavedNotificationID") private var storySavedNotificationID = ""
-    @AppStorage("hasCompletedFirstDesignGuide") private var hasCompletedFirstDesignGuide = false
 
     @Environment(AuthManager.self) private var authManager
     @State private var showStorySavedToast = false
     @State private var storySavedToastTask: Task<Void, Never>?
-    @State private var firstDesignGuideManager = FirstDesignGuideManager()
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -46,17 +44,6 @@ struct ContentView: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
                     .zIndex(1)
             }
-        }
-        .environment(firstDesignGuideManager)
-        .firstDesignGuideOverlay(manager: firstDesignGuideManager)
-        .onAppear {
-            configureFirstDesignGuide()
-        }
-        .onChange(of: hasCompletedFirstDesignGuide) { _, newValue in
-            configureFirstDesignGuide(legacyCompletion: newValue)
-        }
-        .onChange(of: authManager.state) { _, _ in
-            configureFirstDesignGuide()
         }
         .onChange(of: storySavedNotificationID) { _, newValue in
             guard !newValue.isEmpty else { return }
@@ -117,39 +104,7 @@ struct ContentView: View {
         }
     }
 
-    private var firstDesignGuideStorageKey: String {
-        if let userID = authManager.currentUserID {
-            return "hasCompletedFirstDesignGuide.\(userID.uuidString)"
-        }
 
-        if let email = authManager.currentUserEmail, !email.isEmpty {
-            let identifier = email
-                .lowercased()
-                .replacingOccurrences(
-                    of: #"[^A-Za-z0-9]+"#,
-                    with: "_",
-                    options: .regularExpression
-                )
-                .trimmingCharacters(in: CharacterSet(charactersIn: "_"))
-            return "hasCompletedFirstDesignGuide.pending.\(identifier)"
-        }
-
-        return "hasCompletedFirstDesignGuide.guest"
-    }
-
-    private func configureFirstDesignGuide(legacyCompletion: Bool? = nil) {
-        let key = firstDesignGuideStorageKey
-        let accountCompletion = UserDefaults.standard.bool(forKey: key)
-        let resolvedCompletion = accountCompletion || (legacyCompletion ?? false && authManager.state == .guest)
-
-        firstDesignGuideManager.configure(isCompleted: resolvedCompletion) {
-            UserDefaults.standard.set(true, forKey: key)
-
-            if authManager.state == .guest {
-                hasCompletedFirstDesignGuide = true
-            }
-        }
-    }
 }
 
 #Preview {

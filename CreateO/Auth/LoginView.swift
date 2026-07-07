@@ -49,7 +49,7 @@ struct LoginView: View {
                 .padding(.bottom, 24)
             }
             .background(Color(.systemBackground).ignoresSafeArea())
-            .navigationTitle("Welcome")
+//            .navigationTitle("Welcome")
             .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $showSignUp) {
                 NavigationStack {
@@ -79,7 +79,7 @@ struct LoginView: View {
                     title: "Email",
                     showsWarning: !email.isEmpty && !emailIsValid
                 ) {
-                    TextField("", text: $email)
+                    TextField("Enter your Email", text: $email)
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)

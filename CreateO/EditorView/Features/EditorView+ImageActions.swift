@@ -10,8 +10,6 @@ extension EditorView {
         isFilterActive = false
         imageActionMenuPosition = clampedImageActionMenuPosition(for: point)
         showImageActionMenu = true
-        guideManager.advance(from: .longPressForBackground)
-        guideManager.advance(from: .longPressForBorder)
     }
 
     func openImageFilters() {

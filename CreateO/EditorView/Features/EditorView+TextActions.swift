@@ -46,10 +46,6 @@ extension EditorView {
             focusedTextID = textItem.id
             selectedTextSizeDraft = Double(textItem.fontSize)
         }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-            guideManager.advance(from: .editorText)
-        }
     }
 
     func addEmojiToCanvas(_ emoji: String) {
@@ -196,8 +192,6 @@ extension EditorView {
         performHistoryChange {
             canvasTexts[index].fontName = fontName
         }
-
-        guideManager.advance(from: .editorText)
     }
 
     func applySelectedTextColor(_ color: Color) {
@@ -209,8 +203,6 @@ extension EditorView {
         performHistoryChange {
             canvasTexts[index].textColor = color
         }
-
-        guideManager.advance(from: .editorText)
     }
 
     func beginTextSizeEditing() {
@@ -228,7 +220,6 @@ extension EditorView {
         selectedTextSizeDraft = clampedSize
         canvasTexts[index].fontSize = CGFloat(clampedSize)
         canvasTexts[index].lastFontSize = CGFloat(clampedSize)
-        guideManager.advance(from: .editorText)
     }
 
     func commitTextSizeEditing() {

@@ -15,7 +15,6 @@ extension EditorView {
     var templateSheet: some View {
         EditorTemplatePicker(selectedColor: canvasColor) { color in
             applyCanvasColorTemplate(color)
-            guideManager.advance(from: .editorColors)
             showTemplateSheet = false
         }
         .presentationDetents([.large])

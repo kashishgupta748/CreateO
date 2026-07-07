@@ -66,8 +66,6 @@ extension EditorView {
         } else {
             addImages()
         }
-
-        guideManager.advance(from: .uploadPhoto)
     }
 
     func handleSelectedItems(_ newItems: [PhotosPickerItem]) {

@@ -361,6 +361,19 @@ class DataStore {
         }
     }
 
+    func updateAlbumDesigns(albumID: UUID, designIDs: [UUID]) {
+        guard let index = albums.firstIndex(where: { $0.id == albumID }) else { return }
+        albums[index].albumDesignIDs = designIDs
+        
+        let selectedDesign = designs.filter { designIDs.contains($0.id) }
+        albums[index].thumbnailPath = selectedDesign.first?.thumbnailPath ?? ""
+        
+        albums[index].updatedAt = Date()
+        if let authManager = currentAuthManager {
+            saveLocalCache(authManager: authManager)
+        }
+    }
+
     func deleteAlbum(album: Album) {
         albums.removeAll { $0.id == album.id }
         if let authManager = currentAuthManager {
@@ -398,6 +411,16 @@ class DataStore {
         if let index = designs.firstIndex(where: { $0.id == id }) {
             designs[index].designName = newName
             designs[index].updatedAt  = Date()
+        }
+        if let authManager = currentAuthManager {
+            saveLocalCache(authManager: authManager)
+        }
+    }
+
+    func renameAlbum(id: UUID, newName: String) {
+        if let index = albums.firstIndex(where: { $0.id == id }) {
+            albums[index].albumName = newName
+            albums[index].updatedAt  = Date()
         }
         if let authManager = currentAuthManager {
             saveLocalCache(authManager: authManager)

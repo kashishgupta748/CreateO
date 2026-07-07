@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DesignToolbar: ToolbarContent {
     @Binding var layoutMode: LayoutMode
+    @Binding var showSortMenu: Bool
 
     var body: some ToolbarContent {
         ToolbarItemGroup(placement: .topBarTrailing) {
@@ -12,36 +13,14 @@ struct DesignToolbar: ToolbarContent {
                     .font(.system(size: 17, weight: .medium))
             }
 
-            Menu {
-                Text("Sort Designs")
-
-                Button {
-                    withAnimation { layoutMode = .grid }
-                } label: {
-                    Label("Grid View", systemImage: "square.grid.2x2")
-                        .symbolVariant(layoutMode == .grid ? .fill : .none)
-                }
-
-                Button {
-                    withAnimation { layoutMode = .week }
-                } label: {
-                    Label("Week wise", systemImage: layoutMode == .week ? "checkmark" : "calendar")
-                }
-
-                Button {
-                    withAnimation { layoutMode = .month }
-                } label: {
-                    Label("Month wise", systemImage: layoutMode == .month ? "checkmark" : "calendar.circle")
-                }
-
-                Button {
-                    withAnimation { layoutMode = .year }
-                } label: {
-                    Label("Year wise", systemImage: layoutMode == .year ? "checkmark" : "calendar.badge.clock")
+            Button {
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                    showSortMenu.toggle()
                 }
             } label: {
                 Image(systemName: "line.3.horizontal.decrease")
                     .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(showSortMenu ? Color.accentColor : .primary)
             }
         }
     }

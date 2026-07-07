@@ -11,9 +11,9 @@ struct DesignView: View {
     @State private var showAddOptions = false
     @State private var showStoryBoard = false
     @State private var showEditor = false
+    @State private var showSortMenu = false
 
     @Environment(DataStore.self) var designStore
-    @Environment(FirstDesignGuideManager.self) private var guideManager
     @State public var layoutMode: LayoutMode = .grid
     @Environment(\.horizontalSizeClass) private var hSize
 
@@ -32,26 +32,41 @@ struct DesignView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if designStore.designs.isEmpty {
-                    emptyStateView
-                } else {
-                    ScrollView {
-                        DesignGridView(
-                            designs: designStore.designs,
-                            layoutMode: layoutMode,
-                            masonColumn: isPadLike ? 4 : 2,
-                            columns: columns,
-                            onAddTap: openFirstDesignOptions
-                        )
+            ZStack(alignment: .topTrailing) {
+                Group {
+                    if designStore.designs.isEmpty {
+                        emptyStateView
+                    } else {
+                        ScrollView {
+                            DesignGridView(
+                                designs: designStore.designs,
+                                layoutMode: layoutMode,
+                                masonColumn: isPadLike ? 4 : 2,
+                                columns: columns,
+                                onAddTap: openFirstDesignOptions
+                            )
+                        }
+                        .background(Color(.systemGroupedBackground))
                     }
-                    .background(Color(.systemGroupedBackground))
+                }
+                
+                if showSortMenu {
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                showSortMenu = false
+                            }
+                        }
+                        .ignoresSafeArea()
+                    
+                    sortDropdownMenu
                 }
             }
             .navigationTitle(designStore.designs.isEmpty ? "" : "Designs")
             .navigationBarTitleDisplayMode(designStore.designs.isEmpty ? .inline : .large)
             .toolbar {
-                DesignToolbar(layoutMode: $layoutMode)
+                DesignToolbar(layoutMode: $layoutMode, showSortMenu: $showSortMenu)
             }
             .sheet(isPresented: $showAddOptions) {
                 AddDesignOptionsSheet(
@@ -167,10 +182,6 @@ struct DesignView: View {
                                 .frame(height: 56)
                                 .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                         }
-                        .guideHighlight(
-                            .homeCreate,
-                            isActive: guideManager.currentStep == .homeCreate
-                        )
                         .frame(width: contentWidth)
                     }
                     .position(x: proxy.size.width / 2, y: buttonCenterY)
@@ -181,9 +192,6 @@ struct DesignView: View {
             .frame(width: proxy.size.width, height: proxy.size.height)
             .background(Color(.systemGroupedBackground))
             .scrollIndicators(.hidden)
-            .onAppear {
-                guideManager.showIfNeeded(.homeCreate)
-            }
         }
     }
 
@@ -191,7 +199,6 @@ struct DesignView: View {
 
     private func startBlankCanvas() {
         dismissAddOptionsThen {
-            guideManager.advance(from: .homeCreate)
             pendingEditorImages = []
             showEditor = true
         }
@@ -230,6 +237,72 @@ struct DesignView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
             action()
         }
+    }
+
+    private var sortDropdownMenu: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Sort Designs")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 16)
+                .padding(.top, 14)
+                .padding(.bottom, 8)
+            
+            Divider()
+                .padding(.horizontal, 16)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                dropdownButton(title: "Grid View", icon: "square.grid.2x2", mode: .grid)
+                dropdownButton(title: "Week wise", icon: "calendar", mode: .week)
+                dropdownButton(title: "Month wise", icon: "calendar.circle", mode: .month)
+                dropdownButton(title: "Year wise", icon: "calendar.badge.clock", mode: .year)
+            }
+            .padding(.vertical, 6)
+        }
+        .frame(width: 200)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color(.secondarySystemGroupedBackground))
+                .shadow(color: .black.opacity(0.12), radius: 16, y: 8)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+        )
+        .padding(.top, 8)
+        .padding(.trailing, 16)
+        .transition(.asymmetric(
+            insertion: .scale(scale: 0.9, anchor: .topTrailing).combined(with: .opacity),
+            removal: .scale(scale: 0.9, anchor: .topTrailing).combined(with: .opacity)
+        ))
+        .zIndex(100)
+    }
+
+    private func dropdownButton(title: String, icon: String, mode: LayoutMode) -> some View {
+        let isSelected = layoutMode == mode
+        return Button {
+            withAnimation(.snappy(duration: 0.2)) {
+                layoutMode = mode
+                showSortMenu = false
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: isSelected ? .semibold : .regular))
+                    .foregroundStyle(isSelected ? Color.accentColor : .primary)
+                    .frame(width: 20)
+                
+                Text(title)
+                    .font(.system(size: 15, weight: isSelected ? .semibold : .regular))
+                    .foregroundStyle(isSelected ? Color.accentColor : .primary)
+                
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -387,6 +460,7 @@ private struct HomeQuickCard: View {
         }
         .buttonStyle(.plain)
     }
+
 }
 
 // MARK: SHEET
@@ -516,5 +590,4 @@ private struct SheetRow: View {
 
     DesignView()
         .environment(store)
-        .environment(FirstDesignGuideManager())
 }

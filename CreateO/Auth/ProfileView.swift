@@ -303,46 +303,53 @@ struct ProfileView: View {
     }
 
     private var heroSection: some View {
-        VStack(alignment: .center, spacing: 18) {
-            ProfileAvatarView(name: resolvedDisplayName, accentColor: selectedTheme.accentColor)
-                .frame(maxWidth: .infinity)
-
-            VStack(alignment: .center, spacing: 18) {
-                VStack(alignment: .center, spacing: 10) {
-                    Text(resolvedDisplayName)
-                        .font(.title2.weight(.bold))
-                        .multilineTextAlignment(.center)
-
-                    Label(secondaryText, systemImage: "envelope")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity, alignment: .center)
-
-                    statusPill
-
-                    Text(statusDetail)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
+        VStack(spacing: 20) {
+            // Profile Header Group (Centered, on system grouped background)
+            VStack(spacing: 8) {
+                ProfileAvatarView(name: resolvedDisplayName, accentColor: selectedTheme.accentColor)
+                    .padding(.bottom, 6)
+                
+                Text(resolvedDisplayName)
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(.primary)
+                
+                Label(secondaryText, systemImage: "envelope")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                
+                statusPill
+                    .padding(.top, 4)
+                
+                Text(statusDetail)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 24)
+            }
+            .frame(maxWidth: .infinity)
+            
+            // Edit Profile Button (iOS native Capsule-bordered style)
+            Button(actionButtonTitle) {
+                if authManager.hasAccountContext {
+                    openSheet(.editProfile)
+                } else {
+                    showSignIn = true
                 }
-                .frame(maxWidth: .infinity, alignment: .center)
-
-                Button(actionButtonTitle) {
-                    if authManager.hasAccountContext {
-                        openSheet(.editProfile)
-                    } else {
-                        showSignIn = true
-                    }
-                }
-                .buttonStyle(.plain)
-                .padding(.vertical, 12)
-                .frame(maxWidth: .infinity)
-                .background(Color.accentColor)
-                .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-
+            }
+            .buttonStyle(.bordered)
+            .tint(.accentColor)
+            .controlSize(.regular)
+            .clipShape(Capsule())
+            .padding(.top, -2)
+            
+            // Stats Grid Section
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Library Statistics")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, 4)
+                
                 LazyVGrid(
                     columns: [
                         GridItem(.flexible(), spacing: 12),
@@ -355,11 +362,9 @@ struct ProfileView: View {
                     }
                 }
             }
-            .padding(20)
-            .frame(maxWidth: .infinity, alignment: .center)
-            .background(Color(.systemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .padding(.top, 10)
         }
+        .frame(maxWidth: .infinity)
     }
 
     private var statusPill: some View {
@@ -372,7 +377,7 @@ struct ProfileView: View {
                 .font(.footnote.weight(.semibold))
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.vertical, 6)
         .background(statusColor.opacity(0.12))
         .clipShape(Capsule())
     }
@@ -392,21 +397,46 @@ struct ProfileView: View {
 
     private func statCard(_ stat: ProfileStat) -> some View {
         NavigationLink(value: stat.section) {
-            VStack(spacing: 6) {
-                Text(stat.value)
-                    .font(.title3.weight(.bold))
-
-                Text(stat.title)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(stat.title)
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(.secondary)
+                    Text(stat.value)
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(.primary)
+                }
+                Spacer()
+                Image(systemName: statIcon(for: stat.section))
+                    .font(.title3)
+                    .foregroundStyle(statIconColor(for: stat.section))
             }
             .frame(maxWidth: .infinity)
+            .padding(.horizontal, 16)
             .padding(.vertical, 14)
-            .background(Color(.secondarySystemBackground))
+            .background(Color(.secondarySystemGroupedBackground))
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .buttonStyle(.plain)
+    }
+
+    private func statIcon(for section: ProfileLibrarySection) -> String {
+        switch section {
+        case .designs: return "photo.on.rectangle"
+        case .albums: return "rectangle.stack"
+        case .stories: return "play.rectangle"
+        case .favorites: return "heart.fill"
+        }
+    }
+
+    private func statIconColor(for section: ProfileLibrarySection) -> Color {
+        switch section {
+        case .designs: return .blue
+        case .albums: return .purple
+        case .stories: return .orange
+        case .favorites: return .red
+        }
     }
 
     @ViewBuilder
