@@ -42,7 +42,7 @@ struct EditorView: View {
     @State var textActionTargetID: UUID?
     @State var selectedTextSizeDraft: Double = 34
     @State var showCropSheet = false
- 
+    
     @State var backgroundRemovalImageID: UUID?
     @State var showBackgroundRemovalFailedAlert = false
     @State var showBrushActionMenu = false
