@@ -43,6 +43,7 @@ struct EditorView: View {
     @State var textActionTargetID: UUID?
     @State var selectedTextSizeDraft: Double = 34
     @State var showCropSheet = false
+     var showBackgroundRemovalFailedAlert = false
     @State var backgroundRemovalImageID: UUID?
     @State var showBackgroundRemovalFailedAlert = false
     @State var showBrushActionMenu = false
@@ -67,6 +68,7 @@ struct EditorView: View {
 
     @State var savedStickers: [UIImage] = []
     @State var selectedSticker: UIImage?
+    @State var selectedEmoji: String?
     @State var recentStickers: [UIImage] = []
 
     @State var drawingCanvas = PKCanvasView()
@@ -81,14 +83,16 @@ struct EditorView: View {
     var body: some View {
         editorNavigation
             .toolbar(.hidden, for: .tabBar)
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                editorBottomControlBar
-            }
             .sheet(isPresented: $showSheet) {
                 stickerSheet
             }
             .onChange(of: selectedSticker) { _, _ in
                 addSelectedStickerToCanvas()
+            }
+            .onChange(of: selectedEmoji) { _, emoji in
+                guard let emoji else { return }
+                addEmojiToCanvas(emoji)
+                selectedEmoji = nil
             }
             .sheet(isPresented: $showTemplateSheet) {
                 templateSheet
@@ -141,6 +145,14 @@ struct EditorView: View {
                 syncSelectedTextSizeDraft()
                 guideManager.showIfNeeded(.editorColors)
             }
+            .alert(
+                "Background Removal Failed",
+                isPresented: $showBackgroundRemovalFailedAlert
+            ) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("Could not detect a clear subject in this photo. Try using a photo where the subject stands out from the background.")
+            }
     }
 
     private var editorNavigation: some View {
@@ -158,13 +170,17 @@ struct EditorView: View {
                     activeEditorOverlay
                 }
         }
-        .alert(
-            "Background Removal Failed",
-            isPresented: $showBackgroundRemovalFailedAlert
-        ) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text("Could not detect a clear subject in this photo. Try using a photo where the subject stands out from the background.")
-        }
     }
+
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> saurabh
+    /// True when the currently targeted image action element is an emoji.
+    var isEmojiActionTarget: Bool {
+        guard let id = imageActionTargetID else { return false }
+        return canvasImages.first(where: { $0.element.id == id })?.element.elementType == .emojis
+    }
+
 }

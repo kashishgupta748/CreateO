@@ -104,34 +104,52 @@ extension EditorView {
                         dismissImageActions()
                     }
 
-                EditorImageActionMenu(
-                    onCrop: openCropSheet,
-                    onDoodle: {
-                        dismissImageActions()
-                        isDoodleActive = true
-                        applyFilterSelection(.doodle)
-                    },
-                    onFilters: openImageFilters,
-                    onBackground: {
-                        if let imageActionTargetID {
-                            removeBackground(for: imageActionTargetID)
+                if isEmojiActionTarget {
+<<<<<<< HEAD
+=======
+                    // Emojis only get Duplicate + Delete
+>>>>>>> saurabh
+                    EmojiActionMenu(
+                        onDuplicate: {
+                            if let imageActionTargetID {
+                                duplicateLayer(imageActionTargetID)
+                            }
+                        },
+                        onDelete: {
+                            if let imageActionTargetID {
+                                deleteLayer(imageActionTargetID)
+                            }
                         }
-                    },
-                    onBorder: {
-                        openBorderEditor()
-                    },
-                    onDuplicate: {
-                        if let imageActionTargetID {
-                            duplicateLayer(imageActionTargetID)
+                    )
+                    .position(imageActionMenuPosition)
+                } else {
+                    EditorImageActionMenu(
+                        onCrop: openCropSheet,
+                        onDoodle: {
+                            dismissImageActions()
+                            isDoodleActive = true
+                            applyFilterSelection(.doodle)
+                        },
+                        onFilters: openImageFilters,
+                        onBackground: {
+                            removeBackgroundFromSelectedImage()
+                        },
+                        onBorder: {
+                            openBorderEditor()
+                        },
+                        onDuplicate: {
+                            if let imageActionTargetID {
+                                duplicateLayer(imageActionTargetID)
+                            }
+                        },
+                        onDelete: {
+                            if let imageActionTargetID {
+                                deleteLayer(imageActionTargetID)
+                            }
                         }
-                    },
-                    onDelete: {
-                        if let imageActionTargetID {
-                            deleteLayer(imageActionTargetID)
-                        }
-                    }
-                )
-                .position(imageActionMenuPosition)
+                    )
+                    .position(imageActionMenuPosition)
+                }
             }
         }
     }
