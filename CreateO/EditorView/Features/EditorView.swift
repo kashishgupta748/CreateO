@@ -42,6 +42,7 @@ struct EditorView: View {
     @State var textActionTargetID: UUID?
     @State var selectedTextSizeDraft: Double = 34
     @State var showCropSheet = false
+     var showBackgroundRemovalFailedAlert = false
     @State var backgroundRemovalImageID: UUID?
     @State var showBackgroundRemovalFailedAlert = false
     @State var showBrushActionMenu = false
@@ -169,8 +170,11 @@ struct EditorView: View {
         }
     }
 
+<<<<<<< HEAD
+=======
 
 
+>>>>>>> saurabh
     /// True when the currently targeted image action element is an emoji.
     var isEmojiActionTarget: Bool {
         guard let id = imageActionTargetID else { return false }
