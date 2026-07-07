@@ -143,6 +143,9 @@ private struct ExportImageLayer: View {
     }
     
     private var processedImage: UIImage {
+        if let cached = item.cachedFilteredImage {
+            return cached
+        }
         let filter = item.element.elementFilter ?? .original
         guard filter != .original,
               let sourceCG = item.image.cgImage else { return item.image }

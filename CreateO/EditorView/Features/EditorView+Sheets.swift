@@ -5,7 +5,8 @@ extension EditorView {
         Sticker(
             savedStickers: $savedStickers,
             selectedSticker: $selectedSticker,
-            recentStickers: $recentStickers
+            recentStickers: $recentStickers,
+            selectedEmoji: $selectedEmoji
         )
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)

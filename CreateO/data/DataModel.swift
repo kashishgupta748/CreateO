@@ -189,6 +189,7 @@ struct CanvasImage: Identifiable {
     var lastPosition: CGSize = .zero
     var lastScale: CGFloat = 1.0
     var lastRotation: Angle = .zero
+    var cachedFilteredImage: UIImage? = nil
 }
 
 struct CanvasText: Identifiable {
