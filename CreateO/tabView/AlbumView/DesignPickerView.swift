@@ -6,12 +6,25 @@ struct DesignPickerView: View {
     @Binding var selectedDesignId: [UUID]
     var onUse: (([UUID]) -> Void)? = nil
 
-    private let columns = [
-        GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 14)
-    ]
+    @Environment(\.horizontalSizeClass) private var hSize
+
+    private var isPadLike: Bool { hSize == .regular }
+    private var columnsCount: Int { isPadLike ? 4 : 2 }
+
+    private let spacing: CGFloat = 10
+    private let horizontalPadding: CGFloat = 16
+    private let baselineCardWidth: CGFloat = 180
 
     private var allSelected: Bool {
         !designStore.designs.isEmpty && selectedDesignId.count == designStore.designs.count
+    }
+
+    private var masonryCardWidth: CGFloat {
+        let screenWidth = UIScreen.main.bounds.width
+        let resolvedColumns = max(CGFloat(columnsCount), 1)
+        let availableWidth = max(screenWidth - (horizontalPadding * 2), 1)
+        let totalSpacing = spacing * (resolvedColumns - 1)
+        return max((availableWidth - totalSpacing) / resolvedColumns, 1)
     }
 
     var body: some View {
@@ -20,13 +33,14 @@ struct DesignPickerView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     header
 
-                    LazyVGrid(columns: columns, spacing: 16) {
+                    let cardWidth = masonryCardWidth
+                    MasonryLayout(columns: columnsCount, spacing: spacing) {
                         ForEach(designStore.designs) { design in
-                            designCard(design)
+                            designCard(design, cardWidth: cardWidth)
                         }
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, horizontalPadding)
                 .padding(.top, 14)
                 .padding(.bottom, 120)
             }
@@ -91,8 +105,9 @@ struct DesignPickerView: View {
         }
     }
 
-    private func designCard(_ design: Design) -> some View {
+    private func designCard(_ design: Design, cardWidth: CGFloat) -> some View {
         let isSelected = selectedDesignId.contains(design.id)
+        let cardSize = size(for: design, cardWidth: cardWidth)
 
         return Button {
             toggle(design.id)
@@ -100,8 +115,7 @@ struct DesignPickerView: View {
             ZStack(alignment: .topTrailing) {
                 DesignImageView(path: design.thumbnailPath)
                     .scaledToFill()
-                    .aspectRatio(2.0 / 3.0, contentMode: .fit)
-                    .frame(maxWidth: .infinity)
+                    .frame(width: cardSize.width, height: cardSize.height)
                     .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                     .overlay {
                         RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -119,6 +133,28 @@ struct DesignPickerView: View {
             }
         }
         .buttonStyle(.plain)
+    }
+
+    private func size(for design: Design, cardWidth: CGFloat) -> CGSize {
+        let bucketHeights: [CGFloat] = [228, 252, 278, 304, 332]
+
+        if design.designType == .video {
+            let index = abs(design.id.uuidString.hashValue) % bucketHeights.count
+            return scaledSize(height: bucketHeights[index], cardWidth: cardWidth)
+        }
+
+        if design.designHeight != 270 || design.designWidth != 180 {
+            let ratio = max(CGFloat(design.designHeight) / max(CGFloat(design.designWidth), 1), 1.25)
+            return CGSize(width: cardWidth, height: cardWidth * min(ratio, 2.05))
+        }
+
+        let index = abs(design.id.uuidString.hashValue) % bucketHeights.count
+        return scaledSize(height: bucketHeights[index], cardWidth: cardWidth)
+    }
+
+    private func scaledSize(height baselineHeight: CGFloat, cardWidth: CGFloat) -> CGSize {
+        let ratio = baselineHeight / baselineCardWidth
+        return CGSize(width: cardWidth, height: cardWidth * ratio)
     }
 
     private func toggle(_ id: UUID) {

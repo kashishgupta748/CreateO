@@ -38,15 +38,7 @@ struct StoryAlbumPickerView: View {
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Albums")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "chevron.left")
-                    }
-                }
-            }
+
             .navigationDestination(
                 isPresented: Binding(
                     get: { selectedAlbum != nil },

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import PhotosUI
 //import UIKit
 
 struct ProfileView: View {
@@ -30,6 +31,10 @@ struct ProfileView: View {
     @State private var activeSheet: ProfileSheet?
     @State private var toastMessage: String?
     @State private var draftDisplayName = ""
+    @State private var avatarImage: Image?
+    @State private var selectedItem: PhotosPickerItem?
+    @State private var showAvatarSourceSelector = false
+    @State private var showPhotosPicker = false
 
     private let supportEmail = "support@creato.app"
 
@@ -97,10 +102,6 @@ struct ProfileView: View {
         }
     }
 
-    private var actionButtonTitle: String {
-        authManager.hasAccountContext ? "Edit Profile" : "Sign In"
-    }
-
     private var bottomButtonTitle: String {
         authManager.hasAccountContext ? "Log Out" : "Sign In"
     }
@@ -134,12 +135,7 @@ struct ProfileView: View {
                 systemImage: "person.text.rectangle",
                 action: { openSheet(.editProfile) }
             ),
-            SettingsRowModel(
-                title: "Sync Status",
-                subtitle: statusTitle,
-                systemImage: "arrow.triangle.2.circlepath",
-                action: { openSheet(.syncStatus) }
-            ),
+
             SettingsRowModel(
                 title: "Notifications",
                 subtitle: notificationsEnabled ? "Enabled" : "Disabled",
@@ -224,7 +220,7 @@ struct ProfileView: View {
                             .foregroundStyle(.red)
                     }
 
-                    settingsSection(title: "Workspace", rows: accountRows)
+                    settingsSection(title: "", rows: accountRows)
                     settingsSection(title: "Support", rows: supportRows)
                     bottomActionButton
                 }
@@ -259,8 +255,35 @@ struct ProfileView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
+            .photosPicker(isPresented: $showPhotosPicker, selection: $selectedItem, matching: .images)
+            .confirmationDialog("Profile Picture", isPresented: $showAvatarSourceSelector, titleVisibility: .visible) {
+                Button("Choose from Library") {
+                    showPhotosPicker = true
+                }
+                if avatarImage != nil {
+                    Button("Remove Photo", role: .destructive) {
+                        deleteAvatarImage()
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            }
+            .onChange(of: selectedItem) { newItem in
+                guard let newItem else { return }
+                Task {
+                    if let data = try? await newItem.loadTransferable(type: Data.self),
+                       let uiImage = UIImage(data: data) {
+                        await MainActor.run {
+                            saveAvatarImage(uiImage)
+                        }
+                    }
+                }
+            }
+            .onChange(of: authManager.currentUserEmail) { _ in
+                loadAvatarImage()
+            }
             .task {
                 draftDisplayName = resolvedDisplayName
+                loadAvatarImage()
             }
         }
     }
@@ -306,42 +329,34 @@ struct ProfileView: View {
         VStack(spacing: 20) {
             // Profile Header Group (Centered, on system grouped background)
             VStack(spacing: 8) {
-                ProfileAvatarView(name: resolvedDisplayName, accentColor: selectedTheme.accentColor)
-                    .padding(.bottom, 6)
+                Button {
+                    if avatarImage != nil {
+                        showAvatarSourceSelector = true
+                    } else {
+                        showPhotosPicker = true
+                    }
+                } label: {
+                    ZStack(alignment: .bottomTrailing) {
+                        ProfileAvatarView(avatarImage: avatarImage, name: resolvedDisplayName, accentColor: selectedTheme.accentColor)
+                        
+                        Image(systemName: "camera.fill")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(6)
+                            .background(Color.accentColor)
+                            .clipShape(Circle())
+                            .shadow(color: .black.opacity(0.15), radius: 2, x: 0, y: 1)
+                            .offset(x: 4, y: 2)
+                    }
+                }
+                .buttonStyle(.plain)
+                .padding(.bottom, 6)
                 
                 Text(resolvedDisplayName)
                     .font(.title2.weight(.bold))
                     .foregroundStyle(.primary)
-                
-                Label(secondaryText, systemImage: "envelope")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                
-                statusPill
-                    .padding(.top, 4)
-                
-                Text(statusDetail)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, 24)
             }
             .frame(maxWidth: .infinity)
-            
-            // Edit Profile Button (iOS native Capsule-bordered style)
-            Button(actionButtonTitle) {
-                if authManager.hasAccountContext {
-                    openSheet(.editProfile)
-                } else {
-                    showSignIn = true
-                }
-            }
-            .buttonStyle(.bordered)
-            .tint(.accentColor)
-            .controlSize(.regular)
-            .clipShape(Capsule())
-            .padding(.top, -2)
             
             // Stats Grid Section
             VStack(alignment: .leading, spacing: 10) {
@@ -365,34 +380,6 @@ struct ProfileView: View {
             .padding(.top, 10)
         }
         .frame(maxWidth: .infinity)
-    }
-
-    private var statusPill: some View {
-        HStack(spacing: 8) {
-            Circle()
-                .fill(statusColor)
-                .frame(width: 8, height: 8)
-
-            Text(statusTitle)
-                .font(.footnote.weight(.semibold))
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(statusColor.opacity(0.12))
-        .clipShape(Capsule())
-    }
-
-    private var statusColor: Color {
-        switch authManager.state {
-        case .authenticated:
-            return .green
-        case .pendingEmailConfirmation:
-            return .orange
-        case .guest:
-            return .accentColor
-        case .loading:
-            return .gray
-        }
     }
 
     private func statCard(_ stat: ProfileStat) -> some View {
@@ -502,8 +489,7 @@ struct ProfileView: View {
         switch sheet {
         case .editProfile:
             editProfileSheet
-        case .syncStatus:
-            syncStatusSheet
+
         case .notifications:
             notificationsSheet
         case .security:
@@ -579,43 +565,6 @@ struct ProfileView: View {
                 }
                 .fontWeight(.semibold)
                 .disabled(isSavingProfile)
-            }
-        }
-    }
-
-    private var syncStatusSheet: some View {
-        List {
-            Section("Current status") {
-                LabeledContent("Mode", value: statusTitle)
-                LabeledContent("Designs", value: "\(designStore.designs.count)")
-                LabeledContent("Albums", value: "\(designStore.albums.count)")
-                LabeledContent("Favorites", value: "\(totalFavorites)")
-            }
-
-            Section("What this means") {
-                Text(statusDetail)
-                Text(authManager.isLoggedIn ? "Changes are prepared for your signed-in workspace." : "Sign in to keep this workspace connected to your account.")
-            }
-
-            if authManager.isLoggedIn {
-                Section("Actions") {
-                    Button {
-                        Task { await refreshSync() }
-                    } label: {
-                        if isRefreshingSync {
-                            ProgressView()
-                        } else {
-                            Label("Refresh library from cloud", systemImage: "arrow.clockwise")
-                        }
-                    }
-                }
-            }
-        }
-        .navigationTitle("Sync Status")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("Done") { activeSheet = nil }
             }
         }
     }
@@ -1007,6 +956,47 @@ struct ProfileView: View {
         "profile.displayName.\(email.lowercased())"
     }
 
+    private var avatarImageURL: URL? {
+        let fileManager = FileManager.default
+        guard let documentsDirectory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
+        let identifier = authManager.currentUserEmail?.lowercased() ?? "guest"
+        let sanitizedIdentifier = identifier.replacingOccurrences(of: "@", with: "_").replacingOccurrences(of: ".", with: "_")
+        let filename = "avatar_\(sanitizedIdentifier).jpg"
+        return documentsDirectory.appendingPathComponent(filename)
+    }
+
+    private func loadAvatarImage() {
+        guard let avatarImageURL, FileManager.default.fileExists(atPath: avatarImageURL.path) else {
+            self.avatarImage = nil
+            return
+        }
+        if let uiImage = UIImage(contentsOfFile: avatarImageURL.path) {
+            self.avatarImage = Image(uiImage: uiImage)
+        } else {
+            self.avatarImage = nil
+        }
+    }
+
+    private func saveAvatarImage(_ uiImage: UIImage) {
+        guard let avatarImageURL else { return }
+        if let data = uiImage.jpegData(compressionQuality: 0.8) {
+            do {
+                try data.write(to: avatarImageURL)
+                self.avatarImage = Image(uiImage: uiImage)
+                showToast("Profile image updated")
+            } catch {
+                errorMessage = "Failed to save profile image: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    private func deleteAvatarImage() {
+        guard let avatarImageURL else { return }
+        try? FileManager.default.removeItem(at: avatarImageURL)
+        self.avatarImage = nil
+        showToast("Profile image removed")
+    }
+
     private func openSupportEmail() {
         guard let url = URL(string: "mailto:\(supportEmail)?subject=Creato%20Support") else { return }
         openURL(url)
@@ -1097,6 +1087,7 @@ private struct SettingsRowView: View {
 }
 
 private struct ProfileAvatarView: View {
+    let avatarImage: Image?
     let name: String
     let accentColor: Color
 
@@ -1108,22 +1099,31 @@ private struct ProfileAvatarView: View {
     }
 
     var body: some View {
-        ZStack {
-            Circle()
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            accentColor.opacity(0.85),
-                            accentColor.opacity(0.30)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+        Group {
+            if let avatarImage {
+                avatarImage
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .clipShape(Circle())
+            } else {
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    accentColor.opacity(0.85),
+                                    accentColor.opacity(0.30)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
 
-            Text(initials)
-                .font(.system(size: 30, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
+                    Text(initials)
+                        .font(.system(size: 30, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                }
+            }
         }
         .frame(width: 88, height: 88)
     }
@@ -1376,7 +1376,7 @@ private struct ProfileSupportSection: Identifiable {
 
 private enum ProfileSheet: String, Identifiable {
     case editProfile
-    case syncStatus
+
     case notifications
     case security
     case appearance
