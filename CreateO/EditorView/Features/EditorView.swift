@@ -45,6 +45,7 @@ struct EditorView: View {
     @State var showCropSheet = false
      var showBackgroundRemovalFailedAlert = false
     @State var backgroundRemovalImageID: UUID?
+    @State var showBackgroundRemovalFailedAlert = false
     @State var showBrushActionMenu = false
     @State var brushLayerZIndex = 0
     @State var isBrushLayerVisible = true
@@ -144,6 +145,14 @@ struct EditorView: View {
                 syncSelectedTextSizeDraft()
                 guideManager.showIfNeeded(.editorColors)
             }
+            .alert(
+                "Background Removal Failed",
+                isPresented: $showBackgroundRemovalFailedAlert
+            ) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("Could not detect a clear subject in this photo. Try using a photo where the subject stands out from the background.")
+            }
     }
 
     private var editorNavigation: some View {
@@ -163,6 +172,11 @@ struct EditorView: View {
         }
     }
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> saurabh
     /// True when the currently targeted image action element is an emoji.
     var isEmojiActionTarget: Bool {
         guard let id = imageActionTargetID else { return false }
