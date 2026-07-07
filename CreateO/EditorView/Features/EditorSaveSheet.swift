@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct EditorSaveSheet: View {
-    @Environment(FirstDesignGuideManager.self) private var guideManager
 
     @Binding var designName: String
     let albums: [Album]
@@ -94,10 +93,6 @@ struct EditorSaveSheet: View {
                 Section {
                     Button(saveButtonTitle, action: handleSave)
                         .frame(maxWidth: .infinity, alignment: .center)
-                        .guideHighlight(
-                            .editorSave,
-                            isActive: guideManager.currentStep == .saveDesign
-                        )
                 }
                 .disabled(!isSaveEnabled)
             }
@@ -105,12 +100,8 @@ struct EditorSaveSheet: View {
             .contentMargins(.bottom, 18, for: .scrollContent)
             .navigationTitle("Save Design")
             .navigationBarTitleDisplayMode(.inline)
-            .onAppear {
-                guideManager.show(.saveDesign)
-            }
         }
         .presentationDetents([.medium, .large])
-        .firstDesignGuideOverlay(manager: guideManager)
     }
 
     private var saveButtonTitle: String {
@@ -127,16 +118,13 @@ struct EditorSaveSheet: View {
     private func handleSave() {
         switch selectedOption {
         case .library:
-            guideManager.advance(from: .saveDesign)
             onSave(.library)
         case .existingAlbum:
             guard let selectedAlbumID else { return }
-            guideManager.advance(from: .saveDesign)
             onSave(.existingAlbum(selectedAlbumID))
         case .newAlbum:
             let trimmedAlbumName = newAlbumName.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmedAlbumName.isEmpty else { return }
-            guideManager.advance(from: .saveDesign)
             onSave(.newAlbum(trimmedAlbumName))
         }
     }

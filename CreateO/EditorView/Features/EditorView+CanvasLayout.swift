@@ -43,7 +43,6 @@ extension EditorView {
             presentTextActions: presentTextActions,
             removeTextLayerIfEmpty: removeTextLayerIfEmpty,
             presentBrushActions: presentBrushActions,
-            brushDrawingUsedForGuide: brushDrawingUsedForGuide,
             openLayerSheet: openLayerSheet,
             beginHistoryTransaction: beginHistoryTransaction,
             endHistoryTransaction: endHistoryTransaction
@@ -105,10 +104,7 @@ extension EditorView {
                     }
 
                 if isEmojiActionTarget {
-<<<<<<< HEAD
-=======
-                    // Emojis only get Duplicate + Delete
->>>>>>> saurabh
+
                     EmojiActionMenu(
                         onDuplicate: {
                             if let imageActionTargetID {

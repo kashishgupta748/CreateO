@@ -5,6 +5,8 @@ struct AlbumToolbar: View {
     @Environment(DataStore.self) var AlbumStore
     @Binding var showDeleteAlert: Bool
     @Binding var selectedAlbum: Album?
+    @Binding var showRenameSheet: Bool
+    @Binding var renameDraft: String
     
     var body: some View {
         Group {
@@ -21,7 +23,9 @@ struct AlbumToolbar: View {
             }
             
             Button {
-                print("album renamed")
+                selectedAlbum = album
+                renameDraft = album.albumName
+                showRenameSheet = true
             } label: {
                 Label("Rename", systemImage: "pencil")
             }

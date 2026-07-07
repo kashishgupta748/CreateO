@@ -2,7 +2,6 @@ import PencilKit
 import SwiftUI
 
 struct EditorCanvasView: View {
-    @Environment(FirstDesignGuideManager.self) private var guideManager
 
     @Binding var canvasImages: [CanvasImage]
     @Binding var canvasTexts: [CanvasText]
@@ -31,7 +30,6 @@ struct EditorCanvasView: View {
     let presentTextActions: (UUID) -> Void
     let removeTextLayerIfEmpty: (UUID) -> Void
     let presentBrushActions: () -> Void
-    let brushDrawingUsedForGuide: () -> Void
     let openLayerSheet: () -> Void
     let beginHistoryTransaction: () -> Void
     let endHistoryTransaction: () -> Void
@@ -85,10 +83,6 @@ struct EditorCanvasView: View {
             }
         }
         .shadow(radius: 5)
-        .guideHighlight(
-            .editorCanvas,
-            isActive: guideManager.currentStep?.anchor == .editorCanvas
-        )
     }
 
     private func imageLayers(for canvasSize: CGSize) -> some View {
@@ -146,7 +140,6 @@ struct EditorCanvasView: View {
             onDrawingBegan: beginHistoryTransaction,
             onDrawingEnded: {
                 endHistoryTransaction()
-                brushDrawingUsedForGuide()
             }
         )
         .opacity(isBrushLayerVisible ? 1 : 0)

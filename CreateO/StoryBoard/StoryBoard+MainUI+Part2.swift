@@ -36,7 +36,7 @@ extension StoryBoard {
                             .foregroundStyle(Color.accentColor)
                     }
 
-                    Text("Start your story")
+                    Text("Click here to start")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundStyle(.primary)
 

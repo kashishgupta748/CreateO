@@ -13,7 +13,6 @@ struct DesignView: View {
     @State private var showEditor = false
 
     @Environment(DataStore.self) var designStore
-    @Environment(FirstDesignGuideManager.self) private var guideManager
     @State public var layoutMode: LayoutMode = .grid
     @Environment(\.horizontalSizeClass) private var hSize
 
@@ -32,21 +31,24 @@ struct DesignView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if designStore.designs.isEmpty {
-                    emptyStateView
-                } else {
-                    ScrollView {
-                        DesignGridView(
-                            designs: designStore.designs,
-                            layoutMode: layoutMode,
-                            masonColumn: isPadLike ? 4 : 2,
-                            columns: columns,
-                            onAddTap: openFirstDesignOptions
-                        )
+            ZStack(alignment: .topTrailing) {
+                Group {
+                    if designStore.designs.isEmpty {
+                        emptyStateView
+                    } else {
+                        ScrollView {
+                            DesignGridView(
+                                designs: designStore.designs,
+                                layoutMode: layoutMode,
+                                masonColumn: isPadLike ? 4 : 2,
+                                columns: columns,
+                                onAddTap: openFirstDesignOptions
+                            )
+                        }
+                        .background(Color(.systemGroupedBackground))
                     }
-                    .background(Color(.systemGroupedBackground))
                 }
+                
             }
             .navigationTitle(designStore.designs.isEmpty ? "" : "Designs")
             .navigationBarTitleDisplayMode(designStore.designs.isEmpty ? .inline : .large)
@@ -167,10 +169,6 @@ struct DesignView: View {
                                 .frame(height: 56)
                                 .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                         }
-                        .guideHighlight(
-                            .homeCreate,
-                            isActive: guideManager.currentStep == .homeCreate
-                        )
                         .frame(width: contentWidth)
                     }
                     .position(x: proxy.size.width / 2, y: buttonCenterY)
@@ -181,9 +179,6 @@ struct DesignView: View {
             .frame(width: proxy.size.width, height: proxy.size.height)
             .background(Color(.systemGroupedBackground))
             .scrollIndicators(.hidden)
-            .onAppear {
-                guideManager.showIfNeeded(.homeCreate)
-            }
         }
     }
 
@@ -191,7 +186,6 @@ struct DesignView: View {
 
     private func startBlankCanvas() {
         dismissAddOptionsThen {
-            guideManager.advance(from: .homeCreate)
             pendingEditorImages = []
             showEditor = true
         }
@@ -231,6 +225,8 @@ struct DesignView: View {
             action()
         }
     }
+
+
 }
 
 @MainActor
@@ -387,6 +383,7 @@ private struct HomeQuickCard: View {
         }
         .buttonStyle(.plain)
     }
+
 }
 
 // MARK: SHEET
@@ -516,5 +513,4 @@ private struct SheetRow: View {
 
     DesignView()
         .environment(store)
-        .environment(FirstDesignGuideManager())
 }

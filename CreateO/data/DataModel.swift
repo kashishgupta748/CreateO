@@ -307,3 +307,95 @@ struct SavedColor: Codable, Equatable {
         Color(uiColor: UIColor(red: CGFloat(red), green: CGFloat(green), blue: CGFloat(blue), alpha: CGFloat(alpha)))
     }
 }
+
+// MARK: - Shared Albums
+
+struct SharedAlbum: Identifiable, Codable {
+    let id: UUID
+    var albumName: String
+    var ownerName: String
+    var ownerID: UUID
+    var createdAt: Date = Date()
+    var updatedAt: Date?
+    var thumbnailPath: String
+    var designIDs: [UUID]
+    var collaborators: [Collaborator]
+    var activities: [AlbumActivity]
+}
+
+struct Collaborator: Identifiable, Codable, Equatable {
+    let id: UUID
+    var name: String
+    var email: String
+    var avatarColorHex: String
+    var isCurrentUser: Bool
+}
+
+struct AlbumActivity: Identifiable, Codable {
+    let id: UUID
+    var userName: String
+    var userEmail: String
+    var activityType: String // "created", "joined", "added_design", "removed_design", "renamed_album"
+    var detail: String
+    var timestamp: Date = Date()
+}
+
+// MARK: - Color Hex & Avatar Helpers
+
+extension Color {
+    init?(hex: String) {
+        var cString: String = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        
+        if cString.hasPrefix("#") {
+            cString.remove(at: cString.startIndex)
+        }
+        
+        if cString.count != 6 {
+            return nil
+        }
+        
+        var rgbValue: UInt64 = 0
+        Scanner(string: cString).scanHexInt64(&rgbValue)
+        
+        self.init(
+            red: Double((rgbValue & 0xFF0000) >> 16) / 255.0,
+            green: Double((rgbValue & 0x00FF00) >> 8) / 255.0,
+            blue: Double(rgbValue & 0x0000FF) / 255.0
+        )
+    }
+}
+
+struct CollaboratorAvatarView: View {
+    let collaborator: Collaborator
+    var size: CGFloat = 36
+    var fontSize: CGFloat = 12
+    
+    private var initials: String {
+        let parts = collaborator.name.components(separatedBy: " ")
+        if parts.count >= 2 {
+            let first = parts[0].first.map(String.init) ?? ""
+            let second = parts[1].first.map(String.init) ?? ""
+            return (first + second).uppercased()
+        } else if let first = collaborator.name.first {
+            return String(first).uppercased()
+        }
+        return ""
+    }
+    
+    private var avatarColor: Color {
+        Color(hex: collaborator.avatarColorHex) ?? Color.accentColor
+    }
+    
+    var body: some View {
+        Circle()
+            .fill(avatarColor)
+            .frame(width: size, height: size)
+            .overlay(
+                Text(initials)
+                    .font(.system(size: fontSize, weight: .bold))
+                    .foregroundStyle(.white)
+            )
+    }
+}
+
+

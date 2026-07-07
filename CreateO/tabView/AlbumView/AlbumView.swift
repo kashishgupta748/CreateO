@@ -8,6 +8,8 @@ struct AlbumView: View {
    
     @State private var showDeleteAlert = false
     @State private var selectedAlbum: Album?
+    @State private var showRenameSheet = false
+    @State private var renameDraft = ""
     
     private let gridSpacing: CGFloat = 10
     private let horizontalPadding: CGFloat = 16
@@ -83,7 +85,9 @@ struct AlbumView: View {
                                     AlbumToolbar(
                                         album: album,
                                         showDeleteAlert: $showDeleteAlert,
-                                        selectedAlbum: $selectedAlbum
+                                        selectedAlbum: $selectedAlbum,
+                                        showRenameSheet: $showRenameSheet,
+                                        renameDraft: $renameDraft
                                     )
                                 }
                             }
@@ -97,6 +101,12 @@ struct AlbumView: View {
             .navigationTitle("Albums")
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
+                    NavigationLink {
+                        SharedAlbumsListView()
+                    } label: {
+                        Image(systemName: "person.2.fill")
+                    }
+
                     Button {
                         showAlbumSheet = true
                     } label: {
@@ -121,6 +131,39 @@ struct AlbumView: View {
             
         } message: {
             Text("Are you sure you want to delete this album? This action cannot be undone.")
+        }
+        
+        .sheet(isPresented: $showRenameSheet) {
+            NavigationStack {
+                Form {
+                    Section {
+                        TextField("Album name", text: $renameDraft)
+                    }
+
+                    Section {
+                        Button("Save") {
+                            let trimmed = renameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+                            guard !trimmed.isEmpty else { return }
+
+                            if let album = selectedAlbum {
+                                AlbumStore.renameAlbum(id: album.id, newName: trimmed)
+                            }
+                            showRenameSheet = false
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    }
+                }
+                .navigationTitle("Rename")
+                .navigationBarTitleDisplayMode(.inline)
+//                .toolbar {
+//                    ToolbarItem(placement: .topBarTrailing) {
+//                        Button("Done") {
+//                            showRenameSheet = false
+//                        }
+//                    }
+//                }
+            }
+            .presentationDetents([.medium])
         }
     }
 }

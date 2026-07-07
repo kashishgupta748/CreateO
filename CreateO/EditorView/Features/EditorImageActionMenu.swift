@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct EditorImageActionMenu: View {
-    @Environment(FirstDesignGuideManager.self) private var guideManager
 
     let onCrop: () -> Void
     let onDoodle: () -> Void
@@ -29,7 +28,6 @@ struct EditorImageActionMenu: View {
             menuRow(
                 symbol: "person.crop.square.fill",
                 title: "Background Remove",
-                guideAnchor: .imageBackground,
                 action: onBackground
             )
 
@@ -39,7 +37,6 @@ struct EditorImageActionMenu: View {
             menuRow(
                 symbol: "square.dashed",
                 title: "Border",
-                guideAnchor: .imageBorder,
                 action: onBorder
             )
 
@@ -76,7 +73,6 @@ struct EditorImageActionMenu: View {
     private func menuRow(
         symbol: String,
         title: String,
-        guideAnchor: GuideAnchor? = nil,
         isDestructive: Bool = false,
         action: @escaping () -> Void
     ) -> some View {
@@ -94,10 +90,6 @@ struct EditorImageActionMenu: View {
             .frame(height: 58)
         }
         .buttonStyle(.plain)
-        .guideHighlight(
-            guideAnchor ?? .editorCanvas,
-            isActive: guideAnchor.map { guideManager.currentStep?.anchor == $0 } ?? false
-        )
     }
 }
 
