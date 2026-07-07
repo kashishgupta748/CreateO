@@ -13,6 +13,7 @@
 		848712C82FDBE86400C3FAFB /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = 848712C72FDBE86400C3FAFB /* Realtime */; };
 		848712CA2FDBE86400C3FAFB /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = 848712C92FDBE86400C3FAFB /* Storage */; };
 		848712CD2FDBE86F00C3FAFB /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 848712CC2FDBE86F00C3FAFB /* Supabase */; };
+		A1C100012FF7A6C00017CC66 /* onnxruntime in Frameworks */ = {isa = PBXBuildFile; productRef = A1C100032FF7A6C00017CC66 /* onnxruntime */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +33,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1C100012FF7A6C00017CC66 /* onnxruntime in Frameworks */,
 				848712C62FDBE86400C3FAFB /* PostgREST in Frameworks */,
 				848712C42FDBE86400C3FAFB /* Functions in Frameworks */,
 				848712CD2FDBE86F00C3FAFB /* Supabase in Frameworks */,
@@ -88,6 +90,7 @@
 			);
 			name = CreateO;
 			packageProductDependencies = (
+				A1C100032FF7A6C00017CC66 /* onnxruntime */,
 				848712C12FDBE86400C3FAFB /* Auth */,
 				848712C32FDBE86400C3FAFB /* Functions */,
 				848712C52FDBE86400C3FAFB /* PostgREST */,
@@ -124,6 +127,7 @@
 			mainGroup = 84870FFA2FDBE6A500C3FAFB;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				A1C100022FF7A6C00017CC66 /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */,
 				848712C02FDBE86400C3FAFB /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -285,7 +289,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 73B8W4ZN6V;
+				DEVELOPMENT_TEAM = YASVDGSWWN;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need camera access so you can take a photo and edit it.";
@@ -319,7 +323,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 73B8W4ZN6V;
+				DEVELOPMENT_TEAM = YASVDGSWWN;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need camera access so you can take a photo and edit it.";
@@ -378,6 +382,14 @@
 				minimumVersion = 2.5.1;
 			};
 		};
+		A1C100022FF7A6C00017CC66 /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/microsoft/onnxruntime-swift-package-manager";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.22.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -410,6 +422,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 848712C02FDBE86400C3FAFB /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Supabase;
+		};
+		A1C100032FF7A6C00017CC66 /* onnxruntime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1C100022FF7A6C00017CC66 /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */;
+			productName = onnxruntime;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
