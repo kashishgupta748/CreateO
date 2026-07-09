@@ -13,6 +13,7 @@
 		848712C82FDBE86400C3FAFB /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = 848712C72FDBE86400C3FAFB /* Realtime */; };
 		848712CA2FDBE86400C3FAFB /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = 848712C92FDBE86400C3FAFB /* Storage */; };
 		848712CD2FDBE86F00C3FAFB /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 848712CC2FDBE86F00C3FAFB /* Supabase */; };
+		848712D02FDBE87000C3FAFB /* onnxruntime in Frameworks */ = {isa = PBXBuildFile; productRef = 848712CF2FDBE87000C3FAFB /* onnxruntime */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -38,6 +39,7 @@
 				848712C22FDBE86400C3FAFB /* Auth in Frameworks */,
 				848712CA2FDBE86400C3FAFB /* Storage in Frameworks */,
 				848712C82FDBE86400C3FAFB /* Realtime in Frameworks */,
+				848712D02FDBE87000C3FAFB /* onnxruntime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -125,6 +127,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				848712C02FDBE86400C3FAFB /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				848712CE2FDBE87000C3FAFB /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 848710042FDBE6A500C3FAFB /* Products */;
@@ -378,6 +381,14 @@
 				minimumVersion = 2.5.1;
 			};
 		};
+		848712CE2FDBE87000C3FAFB /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/microsoft/onnxruntime-swift-package-manager";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.24.2;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -410,6 +421,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 848712C02FDBE86400C3FAFB /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Supabase;
+		};
+		848712CF2FDBE87000C3FAFB /* onnxruntime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 848712CE2FDBE87000C3FAFB /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */;
+			productName = onnxruntime;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
