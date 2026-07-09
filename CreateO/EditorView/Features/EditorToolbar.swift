@@ -21,7 +21,16 @@ struct EditorToolbar: ToolbarContent {
         let id: String
         let symbol: String
         let title: String
+        let isEnabled: Bool
         let action: () -> Void
+
+        init(id: String, symbol: String, title: String, isEnabled: Bool = true, action: @escaping () -> Void) {
+            self.id = id
+            self.symbol = symbol
+            self.title = title
+            self.isEnabled = isEnabled
+            self.action = action
+        }
     }
 
     enum BottomToolbarItem: Identifiable {
@@ -53,63 +62,30 @@ struct EditorToolbar: ToolbarContent {
         }
 
         ToolbarItem(placement: .topBarTrailing) {
-            Button(action: onDoneOrSave) {
-                Image(systemName: "checkmark")
-                    .font(.system(size: isAnyEditorModeActive ? 17 : 18, weight: .semibold))
-                    .foregroundStyle(isAnyEditorModeActive ? Color.white : Color.primary)
-                    .frame(
-                        width: isAnyEditorModeActive ? 42 : 28,
-                        height: isAnyEditorModeActive ? 42 : 28
-                    )
-                    .background {
-                        if isAnyEditorModeActive {
-                            Circle()
-                                .fill(Color.accentColor)
-                                .shadow(color: Color.accentColor.opacity(0.2), radius: 8, y: 4)
-                        }
-                    }
-                    .contentShape(Circle())
+            if isAnyEditorModeActive {
+                Button(action: onDoneOrSave) {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 17, weight: .semibold))
+                        .frame(width: 18, height: 18)
+                }
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.circle)
+                .tint(.accentColor)
+                .controlSize(.large)
+                .animation(.none, value: isAnyEditorModeActive)
+                .accessibilityLabel("Done")
+            } else {
+                Button(action: onDoneOrSave) {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 17, weight: .semibold))
+                        .frame(width: 18, height: 18)
+                }
+                .buttonStyle(.plain)
+                .animation(.none, value: isAnyEditorModeActive)
+                .accessibilityLabel("Save")
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(isAnyEditorModeActive ? "Done" : "Save")
         }
 
-    }
-
-    private var filterAction: ToolbarAction {
-        ToolbarAction(id: "filter", symbol: "wand.and.sparkles", title: "Filter") {
-            onFilter()
-        }
-    }
-
-    private var doodleAction: ToolbarAction {
-        ToolbarAction(id: "doodle", symbol: "scribble.variable", title: "Doodle") {
-            onDoodle()
-        }
-    }
-
-    private var brushAction: ToolbarAction {
-        ToolbarAction(id: "brush", symbol: "paintbrush.pointed.fill", title: "Brush") {
-            onBrush()
-        }
-    }
-
-    private var stickerAction: ToolbarAction {
-        ToolbarAction(id: "sticker", symbol: "face.smiling.inverse", title: "Sticker") {
-            onSticker()
-        }
-    }
-
-    private var textAction: ToolbarAction {
-        ToolbarAction(id: "text", symbol: "textformat", title: "Text") {
-            onText()
-        }
-    }
-
-    private var templateAction: ToolbarAction {
-        ToolbarAction(id: "template", symbol: "square.grid.2x2", title: "Template") {
-            onTemplate()
-        }
     }
 
     private func toolbarIconButton(symbol: String, title: String, isEnabled: Bool = true, action: @escaping () -> Void) -> some View {

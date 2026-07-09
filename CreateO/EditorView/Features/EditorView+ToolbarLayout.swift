@@ -2,34 +2,20 @@ import SwiftUI
 
 extension EditorView {
     var editorBottomControlBar: some View {
-        VStack(spacing: 6) {
-            if shouldShowBottomToolbar {
-                EditorBottomToolbar(
-                    items: bottomToolbarItems,
-                    onUpload: startUpload
-                )
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
-                .bottomToolbarGlass()
-                .padding(.horizontal, 24)
-            }
-        }
-        .padding(.top, 4)
-        .padding(.bottom, 3)
-        .frame(maxWidth: .infinity)
-        .background {
-            Rectangle()
-                .fill(.clear)
-                .ignoresSafeArea(edges: .bottom)
-        }
+        EditorBottomToolbar(
+            items: bottomToolbarItems,
+            onUpload: startUpload
+        )
     }
 
     var bottomToolbarItems: [EditorToolbar.BottomToolbarItem] {
-        [
-            .action(EditorToolbar.ToolbarAction(id: "filter", symbol: "wand.and.sparkles", title: "Filter") {
+        let hasCanvasImage = !canvasImages.isEmpty
+
+        return [
+            .action(EditorToolbar.ToolbarAction(id: "filter", symbol: "wand.and.sparkles", title: "Filter", isEnabled: hasCanvasImage) {
                 activateFilterMode()
             }),
-            .action(EditorToolbar.ToolbarAction(id: "doodle", symbol: "scribble.variable", title: "Doodle") {
+            .action(EditorToolbar.ToolbarAction(id: "doodle", symbol: "scribble.variable", title: "Doodle", isEnabled: hasCanvasImage) {
                 toggleDoodleMode()
             }),
             .action(EditorToolbar.ToolbarAction(id: "brush", symbol: "paintbrush.pointed.fill", title: "Brush") {
@@ -59,7 +45,8 @@ extension EditorView {
                 if isAnyEditorModeActive {
                     closeActiveEditorMode()
                 } else {
-                    dismiss()
+                    dismissImageActions()
+                    showDiscardChangesAlert = true
                 }
             },
             onDoneOrSave: {
@@ -95,23 +82,11 @@ extension EditorView {
                 startUpload()
             }
         )
-    }
-}
 
-private extension View {
-    @ViewBuilder
-    func bottomToolbarGlass() -> some View {
-        if #available(iOS 26.0, *) {
-            self
-                .glassEffect(.regular, in: Capsule())
-        } else {
-            self
-                .background(.regularMaterial, in: Capsule())
-                .overlay {
-                    Capsule()
-                        .strokeBorder(Color.white.opacity(0.35), lineWidth: 0.8)
-                }
-                .shadow(color: Color.black.opacity(0.12), radius: 16, y: 8)
+        if shouldShowBottomToolbar {
+            ToolbarItem(placement: .bottomBar) {
+                editorBottomControlBar
+            }
         }
     }
 }

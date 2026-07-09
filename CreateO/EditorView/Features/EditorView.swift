@@ -30,6 +30,7 @@ struct EditorView: View {
     @State var showTemplateSheet = false
     @State var canvasColor: Color = .white
     @State var showSaveSheet = false
+    @State var showDiscardChangesAlert = false
     @State var isBrushActive = false
     @State var isFilterActive = false
     @State var isBorderActive = false
@@ -42,7 +43,7 @@ struct EditorView: View {
     @State var textActionTargetID: UUID?
     @State var selectedTextSizeDraft: Double = 34
     @State var showCropSheet = false
-    
+
     @State var backgroundRemovalImageID: UUID?
     @State var showBackgroundRemovalFailedAlert = false
     @State var showBrushActionMenu = false
@@ -144,6 +145,21 @@ struct EditorView: View {
                 syncSelectedTextSizeDraft()
             }
             .alert(
+                "Leave Canvas?",
+                isPresented: $showDiscardChangesAlert
+            ) {
+                Button("Keep Editing", role: .cancel) { }
+                Button("Save") {
+                    dismissImageActions()
+                    showSaveSheet = true
+                }
+                Button("Discard Changes", role: .destructive) {
+                    dismiss()
+                }
+            } message: {
+                Text("If you go back now, the changes on this canvas will not be saved.")
+            }
+            .alert(
                 "Background Removal Failed",
                 isPresented: $showBackgroundRemovalFailedAlert
             ) {
@@ -161,20 +177,21 @@ struct EditorView: View {
                 .toolbar {
                     editorToolbar
                 }
+                .overlay(alignment: .bottom) {
+                    if hasActiveEditorOverlay {
+                        activeEditorOverlay
+                            .padding(.horizontal, 10)
+                            .padding(.bottom, 8)
+                    }
+                }
                 .task {
                     loadInitialContentIfNeeded()
-                }
-                .overlay(alignment: .bottom) {
-                    activeEditorOverlay
                 }
         }
     }
 
-
-    /// True when the currently targeted image action element is an emoji.
     var isEmojiActionTarget: Bool {
         guard let id = imageActionTargetID else { return false }
         return canvasImages.first(where: { $0.element.id == id })?.element.elementType == .emojis
     }
-
 }

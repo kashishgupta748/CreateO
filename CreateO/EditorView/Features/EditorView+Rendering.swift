@@ -183,8 +183,9 @@ private struct ExportTextLayer: View {
 
     var body: some View {
         Text(item.text)
-            .font(.custom(item.fontName, size: item.fontSize))
+            .font(Font(item.uiFont))
             .foregroundStyle(item.textColor)
+            .underline(item.isUnderlined, color: item.textColor)
             .lineLimit(1)
             .fixedSize()
             .padding(.horizontal, 10)

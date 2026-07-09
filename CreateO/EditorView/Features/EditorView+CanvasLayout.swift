@@ -3,14 +3,16 @@ import SwiftUI
 extension EditorView {
     var editorContent: some View {
         GeometryReader { geometry in
-            VStack {
-                Spacer(minLength: 12)
+            VStack(spacing: 0) {
+                Spacer(minLength: isTextStylePanelVisible ? 2 : 12)
                 canvasSection(geometry: geometry)
-                Spacer(minLength: 12)
+                Spacer(minLength: isTextStylePanelVisible ? 2 : 12)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .padding(.horizontal, 10)
+            .padding(.top, 4)
+            .padding(.bottom, isTextStylePanelVisible ? 0 : 8)
+            .animation(.easeInOut(duration: 0.2), value: isTextStylePanelVisible)
         }
     }
 
@@ -42,6 +44,7 @@ extension EditorView {
             dismissImageActions: dismissImageActions,
             presentTextActions: presentTextActions,
             removeTextLayerIfEmpty: removeTextLayerIfEmpty,
+            bringTextLayerToFront: bringTextLayerToFront,
             presentBrushActions: presentBrushActions,
             openLayerSheet: openLayerSheet,
             beginHistoryTransaction: beginHistoryTransaction,
@@ -87,20 +90,26 @@ extension EditorView {
             .background(.ultraThinMaterial)
             .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
             .padding()
-        } else if let textStyleBinding = selectedTextStyleBinding {
+        } else if focusedTextID == nil, let textStyleBinding = selectedTextStyleBinding {
             EditorTextStylePanel(
                 selectedFontName: textStyleBinding.fontName,
                 selectedTextColor: textStyleBinding.textColor,
                 selectedTextSize: $selectedTextSizeDraft,
+                isBold: textStyleBinding.isBold,
+                isItalic: textStyleBinding.isItalic,
+                isUnderlined: textStyleBinding.isUnderlined,
                 onSelectFontName: applySelectedTextFont,
                 onSelectTextColor: applySelectedTextColor,
+                onToggleBold: toggleSelectedTextBold,
+                onToggleItalic: toggleSelectedTextItalic,
+                onToggleUnderline: toggleSelectedTextUnderline,
                 onBeginSizeEditing: beginTextSizeEditing,
                 onCommitSizeEditing: commitTextSizeEditing,
                 onPreviewTextSize: previewSelectedTextSize
             )
-            .background(.ultraThinMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .padding()
+            .padding(.horizontal, 10)
+            .padding(.bottom, 4)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
         }
     }
 

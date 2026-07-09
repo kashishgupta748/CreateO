@@ -1,10 +1,3 @@
-//
-//  Sticker.swift
-//  DummySwiftApp
-//
-//  Created by GU on 18/03/26.
-//
-
 import SwiftUI
 
 struct Sticker: View {
@@ -43,7 +36,7 @@ struct Sticker: View {
                 case .emojis:
                     emojis(selectedEmoji: $selectedEmoji)
                 case .shapes:
-                    shapes()
+                    shapes(selectedSticker: $selectedSticker)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)

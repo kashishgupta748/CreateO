@@ -7,6 +7,11 @@ extension EditorView {
         selectedImageID = imageID
     }
 
+    func bringTextLayerToFront(_ textID: UUID) {
+        moveLayer(layerIdentifier(forTextID: textID), topLayerIdentifier(), shouldRecordHistory: false)
+        selectedTextID = textID
+    }
+
     func nextAvailableLayerZIndex() -> Int {
         let imageMax = canvasImages.map(\.element.zIndex).max() ?? -1
         let textMax = canvasTexts.map(\.zIndex).max() ?? -1

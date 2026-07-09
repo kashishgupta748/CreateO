@@ -198,6 +198,9 @@ struct CanvasText: Identifiable {
     var fontName: String
     var fontSize: CGFloat
     var textColor: Color
+    var isBold: Bool = false
+    var isItalic: Bool = false
+    var isUnderlined: Bool = false
     var zIndex: Int = 0
     var isVisible: Bool = true
     var position: CGSize = .zero
@@ -207,7 +210,20 @@ struct CanvasText: Identifiable {
     var lastRotation: Angle = .zero
 
     var uiFont: UIFont {
-        UIFont(name: fontName, size: fontSize) ?? .systemFont(ofSize: fontSize)
+        displayUIFont(fontSize: fontSize)
+    }
+
+    func displayUIFont(fontSize: CGFloat) -> UIFont {
+        let baseFont = UIFont(name: fontName, size: fontSize) ?? .systemFont(ofSize: fontSize)
+        var traits = baseFont.fontDescriptor.symbolicTraits
+        if isBold {
+            traits.insert(.traitBold)
+        }
+        if isItalic {
+            traits.insert(.traitItalic)
+        }
+        let descriptor = baseFont.fontDescriptor.withSymbolicTraits(traits) ?? baseFont.fontDescriptor
+        return UIFont(descriptor: descriptor, size: fontSize)
     }
 }
 
@@ -231,11 +247,77 @@ struct SavedCanvasText: Codable {
     var fontName: String
     var fontSize: Double
     var textColor: SavedColor
+    var isBold: Bool
+    var isItalic: Bool
+    var isUnderlined: Bool
     var zIndex: Int
     var isVisible: Bool
     var positionX: Double
     var positionY: Double
     var rotationRadians: Double
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case text
+        case fontName
+        case fontSize
+        case textColor
+        case isBold
+        case isItalic
+        case isUnderlined
+        case zIndex
+        case isVisible
+        case positionX
+        case positionY
+        case rotationRadians
+    }
+
+    init(
+        id: UUID,
+        text: String,
+        fontName: String,
+        fontSize: Double,
+        textColor: SavedColor,
+        isBold: Bool,
+        isItalic: Bool,
+        isUnderlined: Bool,
+        zIndex: Int,
+        isVisible: Bool,
+        positionX: Double,
+        positionY: Double,
+        rotationRadians: Double
+    ) {
+        self.id = id
+        self.text = text
+        self.fontName = fontName
+        self.fontSize = fontSize
+        self.textColor = textColor
+        self.isBold = isBold
+        self.isItalic = isItalic
+        self.isUnderlined = isUnderlined
+        self.zIndex = zIndex
+        self.isVisible = isVisible
+        self.positionX = positionX
+        self.positionY = positionY
+        self.rotationRadians = rotationRadians
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        text = try container.decode(String.self, forKey: .text)
+        fontName = try container.decode(String.self, forKey: .fontName)
+        fontSize = try container.decode(Double.self, forKey: .fontSize)
+        textColor = try container.decode(SavedColor.self, forKey: .textColor)
+        isBold = try container.decodeIfPresent(Bool.self, forKey: .isBold) ?? false
+        isItalic = try container.decodeIfPresent(Bool.self, forKey: .isItalic) ?? false
+        isUnderlined = try container.decodeIfPresent(Bool.self, forKey: .isUnderlined) ?? false
+        zIndex = try container.decode(Int.self, forKey: .zIndex)
+        isVisible = try container.decode(Bool.self, forKey: .isVisible)
+        positionX = try container.decode(Double.self, forKey: .positionX)
+        positionY = try container.decode(Double.self, forKey: .positionY)
+        rotationRadians = try container.decode(Double.self, forKey: .rotationRadians)
+    }
 }
 
 struct SavedBrushLayer: Codable {

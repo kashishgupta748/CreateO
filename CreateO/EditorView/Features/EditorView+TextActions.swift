@@ -6,9 +6,10 @@ extension EditorView {
         return canvasTexts.firstIndex(where: { $0.id == selectedTextID && $0.isVisible })
     }
 
-    var selectedTextStyleBinding: (fontName: String, textColor: Color)? {
+    var selectedTextStyleBinding: (fontName: String, textColor: Color, isBold: Bool, isItalic: Bool, isUnderlined: Bool)? {
         guard let index = selectedTextIndex else { return nil }
-        return (canvasTexts[index].fontName, canvasTexts[index].textColor)
+        let text = canvasTexts[index]
+        return (text.fontName, text.textColor, text.isBold, text.isItalic, text.isUnderlined)
     }
 
     func syncSelectedTextSizeDraft() {
@@ -27,6 +28,8 @@ extension EditorView {
         isBrushActive = false
         dismissImageActions()
         selectedImageID = nil
+        showTextActionMenu = false
+        textActionTargetID = nil
 
         performHistoryChange {
             var textItem = CanvasText(
@@ -34,6 +37,9 @@ extension EditorView {
                 fontName: UIFont.preferredFont(forTextStyle: .title2).fontName,
                 fontSize: 34,
                 textColor: .black,
+                isBold: false,
+                isItalic: false,
+                isUnderlined: false,
                 zIndex: nextAvailableLayerZIndex(),
                 isVisible: true,
                 lastFontSize: 34
@@ -43,7 +49,7 @@ extension EditorView {
 
             canvasTexts.append(textItem)
             selectedTextID = textItem.id
-            focusedTextID = textItem.id
+            focusedTextID = nil
             selectedTextSizeDraft = Double(textItem.fontSize)
         }
     }
@@ -136,6 +142,9 @@ extension EditorView {
                 fontName: text.fontName,
                 fontSize: text.fontSize,
                 textColor: text.textColor,
+                isBold: text.isBold,
+                isItalic: text.isItalic,
+                isUnderlined: text.isUnderlined,
                 zIndex: nextAvailableLayerZIndex(),
                 isVisible: text.isVisible,
                 lastFontSize: text.fontSize
@@ -202,6 +211,27 @@ extension EditorView {
 
         performHistoryChange {
             canvasTexts[index].textColor = color
+        }
+    }
+
+    func toggleSelectedTextBold() {
+        guard let index = selectedTextIndex else { return }
+        performHistoryChange {
+            canvasTexts[index].isBold.toggle()
+        }
+    }
+
+    func toggleSelectedTextItalic() {
+        guard let index = selectedTextIndex else { return }
+        performHistoryChange {
+            canvasTexts[index].isItalic.toggle()
+        }
+    }
+
+    func toggleSelectedTextUnderline() {
+        guard let index = selectedTextIndex else { return }
+        performHistoryChange {
+            canvasTexts[index].isUnderlined.toggle()
         }
     }
 

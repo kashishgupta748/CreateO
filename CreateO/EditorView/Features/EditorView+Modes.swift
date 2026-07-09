@@ -165,7 +165,9 @@ extension EditorView {
         if focusedTextID != nil {
             focusedTextID = nil
         }
-        selectedTextID = nil
+        if isTextSelectionActive {
+            selectedTextID = nil
+        }
         if isBorderActive {
             cancelBorderEditing()
         }
@@ -178,6 +180,10 @@ extension EditorView {
     func completeActiveEditorMode() {
         if focusedTextID != nil {
             focusedTextID = nil
+            return
+        }
+        if isTextSelectionActive {
+            selectedTextID = nil
             return
         }
         if isBrushActive {

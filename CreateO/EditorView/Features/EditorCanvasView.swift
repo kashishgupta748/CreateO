@@ -29,6 +29,7 @@ struct EditorCanvasView: View {
     let dismissImageActions: () -> Void
     let presentTextActions: (UUID) -> Void
     let removeTextLayerIfEmpty: (UUID) -> Void
+    let bringTextLayerToFront: (UUID) -> Void
     let presentBrushActions: () -> Void
     let openLayerSheet: () -> Void
     let beginHistoryTransaction: () -> Void
@@ -121,8 +122,17 @@ struct EditorCanvasView: View {
                     focusedTextID: $canvasFocusedTextID,
                     canvasSize: canvasSize,
                     onLongPress: { presentTextActions(item.id) },
+                    onSelect: {
+                        dismissImageActions()
+                        selectedImageID = nil
+                        selectedTextID = item.id
+                        bringTextLayerToFront(item.id)
+                    },
                     onInteractionBegan: beginHistoryTransaction,
-                    onInteractionEnded: endHistoryTransaction
+                    onInteractionEnded: endHistoryTransaction,
+                    onRemoveIfEmpty: {
+                        removeTextLayerIfEmpty(item.id)
+                    }
                 )
                 .zIndex(Double(item.zIndex))
                 .allowsHitTesting(!isBrushActive)

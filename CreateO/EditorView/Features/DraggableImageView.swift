@@ -215,7 +215,7 @@ struct DraggableImageView: View {
                     return
                 }
                 
-                if currentFilter == .animeStyle || currentFilter == .watercolor || currentFilter == .sketch {
+                if currentFilter == .watercolor || currentFilter == .sketch {
                     do {
                         let resultImg = try await AIFilterService.shared.applyFilter(image: item.image, filter: currentFilter)
                         filteredImage = resultImg.cgImage

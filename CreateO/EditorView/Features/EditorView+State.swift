@@ -1,12 +1,24 @@
 import SwiftUI
 
 extension EditorView {
+    var isTextSelectionActive: Bool {
+        selectedTextID != nil
+    }
+
+    var isTextStylePanelVisible: Bool {
+        selectedTextID != nil && focusedTextID == nil
+    }
+
     var isAnyEditorModeActive: Bool {
-        isBrushActive || isFilterActive || isBorderActive || isDoodleActive || focusedTextID != nil
+        isBrushActive || isFilterActive || isBorderActive || isDoodleActive || isTextSelectionActive || focusedTextID != nil
     }
 
     var shouldShowBottomToolbar: Bool {
-        !isBrushActive && !isFilterActive && !isBorderActive && focusedTextID == nil
+        !isBrushActive && !isFilterActive && !isBorderActive && !isTextStylePanelVisible && focusedTextID == nil
+    }
+
+    var hasActiveEditorOverlay: Bool {
+        isFilterActive || isBorderActive || isTextStylePanelVisible
     }
 
     var selectedCanvasImage: CanvasImage? {
@@ -49,8 +61,9 @@ extension EditorView {
     ) -> CGSize {
         let horizontalPadding = horizontalSizeClass == .regular ? 48.0 : 24.0
         let verticalPadding = verticalSizeClass == .compact ? 20.0 : 36.0
+        let textPanelReserve = isTextStylePanelVisible ? (verticalSizeClass == .compact ? 170.0 : 220.0) : 0.0
         let maxWidth = min(max(availableSize.width - horizontalPadding, 220), 520)
-        let maxHeight = max(availableSize.height - verticalPadding, 320)
+        let maxHeight = max(availableSize.height - verticalPadding - textPanelReserve, 300)
 
         var width = min(maxWidth, maxHeight * Self.canvasAspectRatio)
         var height = width / Self.canvasAspectRatio

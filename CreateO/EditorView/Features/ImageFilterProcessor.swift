@@ -8,6 +8,7 @@
 import CoreGraphics
 import CoreImage
 import CoreImage.CIFilterBuiltins
+import UIKit
 
 actor ImageFilterProcessor {
 
@@ -32,12 +33,11 @@ actor ImageFilterProcessor {
         case .original:
             return image
         case .doodle:
-            return applyDoodleStyle(to: image) ?? image
+            return applySketchifyModel(to: image) ?? applyDoodleStyle(to: image) ?? image
         case .smooth:
             return applyGhibliStyle(to: image) ?? image
         case .animeStyle:
-            let preSmoothed = applyPreSmooth(to: image) ?? image
-            return applyGhibliStyle(to: preSmoothed) ?? preSmoothed
+            return applyCartoonisticModel(to: image) ?? applyGhibliFallback(to: image) ?? image
         case .sketch:
             return applySketchStyle(to: image) ?? image
         case .watercolor:
@@ -47,6 +47,25 @@ actor ImageFilterProcessor {
         case .crayon:
             return applyCrayonStyle(to: image) ?? image
         }
+    }
+
+    private static func applySketchifyModel(to cgImage: CGImage) -> CGImage? {
+        let source = UIImage(cgImage: cgImage)
+        guard let output = try? SketchifyModelProcessor().generateImage(from: source),
+              let result = output.cgImage else { return nil }
+        return result
+    }
+
+    private static func applyCartoonisticModel(to cgImage: CGImage) -> CGImage? {
+        let source = UIImage(cgImage: cgImage)
+        guard let output = try? CartoonisticProcessor().generateImage(from: source),
+              let result = output.cgImage else { return nil }
+        return result
+    }
+
+    private static func applyGhibliFallback(to cgImage: CGImage) -> CGImage? {
+        let preSmoothed = applyPreSmooth(to: cgImage) ?? cgImage
+        return applyGhibliStyle(to: preSmoothed) ?? preSmoothed
     }
 
     // MARK: - Doodle
