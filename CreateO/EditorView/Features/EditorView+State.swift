@@ -5,6 +5,10 @@ extension EditorView {
         isBrushActive || isFilterActive || isBorderActive || isDoodleActive || focusedTextID != nil
     }
 
+    var shouldShowBottomToolbar: Bool {
+        !isBrushActive && !isFilterActive && !isBorderActive && focusedTextID == nil
+    }
+
     var selectedCanvasImage: CanvasImage? {
         guard let imageActionTargetID else { return nil }
         return canvasImages.first { $0.element.id == imageActionTargetID }

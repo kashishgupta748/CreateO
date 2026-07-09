@@ -52,10 +52,21 @@ extension EditorView {
     @ViewBuilder
     var activeEditorOverlay: some View {
         if isFilterActive {
-            EditorFilterPicker(selectedFilter: selectedFilter, onSelectFilter: applyFilterSelection)
+            EditorFilterPicker(
+                selectedFilter: selectedFilter,
+                previewImage: selectedCanvasImage?.image,
+                onSelectFilter: applyFilterSelection
+            )
                 .background(.ultraThinMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .padding()
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(Color.white.opacity(0.32), lineWidth: 1)
+                }
+                .shadow(color: Color.black.opacity(0.06), radius: 8, y: 4)
+                .padding(.horizontal, 10)
+                .padding(.top, 6)
+                .padding(.bottom, 2)
         } else if isBorderActive {
             EditorBorderPicker(
                 borderWidth: Binding(
@@ -104,7 +115,6 @@ extension EditorView {
                     }
 
                 if isEmojiActionTarget {
-
                     EmojiActionMenu(
                         onDuplicate: {
                             if let imageActionTargetID {

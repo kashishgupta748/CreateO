@@ -2,20 +2,20 @@ import SwiftUI
 
 extension EditorView {
     var editorBottomControlBar: some View {
-        VStack(spacing: 10) {
-            if !isAnyEditorModeActive {
+        VStack(spacing: 6) {
+            if shouldShowBottomToolbar {
                 EditorBottomToolbar(
                     items: bottomToolbarItems,
                     onUpload: startUpload
                 )
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
                 .bottomToolbarGlass()
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 24)
             }
         }
-        .padding(.top, 10)
-        .padding(.bottom, 8)
+        .padding(.top, 4)
+        .padding(.bottom, 3)
         .frame(maxWidth: .infinity)
         .background {
             Rectangle()

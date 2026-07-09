@@ -1,6 +1,5 @@
 import SwiftUI
 
-
 enum EditorSaveDestination {
     case library
     case existingAlbum(UUID)
@@ -9,55 +8,159 @@ enum EditorSaveDestination {
 
 struct EditorFilterPicker: View {
     let selectedFilter: Filter
+    let previewImage: UIImage?
     let onSelectFilter: (Filter) -> Void
 
-    private let filters = Filter.allCases
+    @State private var previewCache: [Filter: UIImage] = [:]
+
+    private let filters: [Filter] = [.original, .animeStyle, .smooth, .watercolor, .pencilcolor, .crayon]
+    private let previewSize = CGSize(width: 72, height: 92)
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Filters")
-                .font(.headline)
-            
-            ScrollView(.horizontal) {
-                HStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
+            header
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
                     ForEach(filters, id: \.self) { filter in
                         filterCell(filter)
                     }
                 }
+                .padding(.horizontal, 2)
             }
-            .scrollIndicators(.hidden)
+            .frame(height: previewSize.height + 22)
         }
-        .padding(.horizontal)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 12)
+        .task(id: previewTaskID) {
+            await generatePreviewsIfNeeded()
+        }
     }
-    
+
+    private var header: some View {
+        Text("Filters")
+            .font(.title3.weight(.semibold))
+            .padding(.horizontal, 2)
+    }
+
+    private var previewTaskID: String {
+        let imageKey = previewImage?.pngData()?.hashValue ?? 0
+        return "\(selectedFilter.rawValue)-\(imageKey)"
+    }
+
+    @ViewBuilder
     private func filterCell(_ filter: Filter) -> some View {
         let isSelected = selectedFilter == filter
-        return VStack(spacing: 6) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(isSelected ? Color.accentColor : Color(.secondarySystemFill))
-                    .frame(width: 60, height: 60)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(
-                                isSelected ? Color.accentColor : Color(.separator),
-                                lineWidth: isSelected ? 0 : 1
-                            )
+
+        Button {
+            onSelectFilter(filter)
+        } label: {
+            VStack(alignment: .leading, spacing: 5) {
+                ZStack(alignment: .bottomLeading) {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(Color(.secondarySystemBackground))
+                        .frame(width: previewSize.width, height: previewSize.height)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .stroke(isSelected ? Color.accentColor : Color.white.opacity(0.3), lineWidth: isSelected ? 2.2 : 1)
+                        }
+
+                    Group {
+                        if let image = previewCache[filter] ?? previewImage {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFill()
+                        } else {
+                            ZStack {
+                                LinearGradient(
+                                    colors: [Color(.systemGray6), Color(.systemGray5)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                                Image(systemName: filter.icon)
+                                    .font(.system(size: 17, weight: .medium))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .frame(width: previewSize.width, height: previewSize.height)
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+
+                    LinearGradient(
+                        colors: [Color.clear, Color.black.opacity(0.28)],
+                        startPoint: .center,
+                        endPoint: .bottom
                     )
-                Image(systemName: filter.icon)
-                    .font(.system(size: 22, weight: .medium))
-                    .foregroundStyle(isSelected ? .white : .primary)
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+
+                    Text(filter.title)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 5)
+                }
+                .shadow(color: isSelected ? Color.accentColor.opacity(0.14) : Color.black.opacity(0.05), radius: isSelected ? 8 : 4, y: 3)
+                .scaleEffect(isSelected ? 1 : 0.98)
+
+                Text(filter.title)
+                    .font(.footnote.weight(isSelected ? .semibold : .medium))
+                    .foregroundStyle(isSelected ? Color.accentColor : .primary)
+                    .lineLimit(1)
+                    .padding(.leading, 4)
             }
-            .onTapGesture {
-                onSelectFilter(filter)
-            }
-            
-            Text(filter.title)
-                .font(.caption2)
-                .fontWeight(isSelected ? .semibold : .regular)
-                .foregroundStyle(isSelected ? Color.accentColor : .primary)
+            .frame(width: previewSize.width)
         }
-        .frame(width: 64)
+        .buttonStyle(.plain)
+    }
+
+    @MainActor
+    private func generatePreviewsIfNeeded() async {
+        guard let previewImage else {
+            previewCache = [:]
+            return
+        }
+
+        let targetImage = previewImage.editorFilterPreviewImage(targetSize: CGSize(width: 132, height: 132))
+        let imageKey = targetImage.pngData()?.hashValue ?? 0
+
+        if previewCache.count == filters.count,
+           previewCache[.original]?.pngData()?.hashValue == imageKey {
+            return
+        }
+
+        let rendered = await Task.detached(priority: .userInitiated) { () -> [Filter: UIImage] in
+            var results: [Filter: UIImage] = [.original: targetImage]
+            guard let sourceCG = targetImage.cgImage else { return results }
+
+            for filter in filters where filter != .original {
+                let renderedCG = ImageFilterProcessor.applySynchronously(filter, to: sourceCG)
+                results[filter] = UIImage(cgImage: renderedCG)
+            }
+            return results
+        }.value
+
+        previewCache = rendered
+    }
+}
+
+private extension UIImage {
+    func editorFilterPreviewImage(targetSize: CGSize) -> UIImage {
+        let renderer = UIGraphicsImageRenderer(size: targetSize)
+        return renderer.image { _ in
+            UIColor.white.setFill()
+            UIBezierPath(rect: CGRect(origin: .zero, size: targetSize)).fill()
+
+            let scale = max(targetSize.width / size.width, targetSize.height / size.height)
+            let drawSize = CGSize(width: size.width * scale, height: size.height * scale)
+            let drawRect = CGRect(
+                x: (targetSize.width - drawSize.width) / 2,
+                y: (targetSize.height - drawSize.height) / 2,
+                width: drawSize.width,
+                height: drawSize.height
+            )
+            draw(in: drawRect)
+        }
     }
 }
 
@@ -146,10 +249,9 @@ struct EditorTextStylePanel: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
-        .onChange(of: selectedTextSize) { _, newSize in
-            if isEditingSize {
-                onPreviewTextSize(newSize)
-            }
+        .onChange(of: selectedTextSize) { _, newValue in
+            guard isEditingSize else { return }
+            onPreviewTextSize(newValue)
         }
     }
 
@@ -159,31 +261,26 @@ struct EditorTextStylePanel: View {
         return Button {
             onSelectFontName(preset.fontName)
         } label: {
-            HStack(spacing: 6) {
-                Text("Aa")
-                    .font(.custom(preset.fontName, size: 15))
-                    .foregroundStyle(isSelected ? .white : .primary)
-
-                Text(preset.title)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(isSelected ? .white : .primary)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(isSelected ? Color.accentColor : Color(.secondarySystemFill))
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(isSelected ? Color.accentColor : Color.black.opacity(0.08), lineWidth: 1)
-            }
+            Text(preset.title)
+                .font(.custom(preset.fontName, size: 15))
+                .lineLimit(1)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    Capsule()
+                        .fill(isSelected ? Color.accentColor.opacity(0.15) : Color(.secondarySystemBackground))
+                )
+                .overlay(
+                    Capsule()
+                        .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 1)
+                )
+                .foregroundStyle(.primary)
         }
         .buttonStyle(.plain)
     }
 
     private func colorSwatch(for color: Color) -> some View {
-        let isSelected = SavedColor(color) == SavedColor(selectedTextColor)
+        let isSelected = selectedTextColor == color
 
         return Button {
             onSelectTextColor(color)
@@ -193,15 +290,7 @@ struct EditorTextStylePanel: View {
                 .frame(width: 28, height: 28)
                 .overlay {
                     Circle()
-                        .stroke(Color.white, lineWidth: 2)
-                }
-                .overlay {
-                    Circle()
-                        .stroke(
-                            isSelected ? Color.accentColor : Color.black.opacity(0.12),
-                            lineWidth: isSelected ? 2.5 : 1
-                        )
-                        .padding(isSelected ? -4 : -2)
+                        .stroke(isSelected ? Color.accentColor : Color.white.opacity(0.4), lineWidth: isSelected ? 2 : 1)
                 }
         }
         .buttonStyle(.plain)
@@ -209,15 +298,9 @@ struct EditorTextStylePanel: View {
 }
 
 private struct EditorFontPreset: Identifiable {
+    let id = UUID()
     let title: String
     let fontName: String
 
-    var id: String { fontName + title }
-
-    static var roundedFontName: String {
-        let roundedDescriptor = UIFont.systemFont(ofSize: 20, weight: .semibold)
-            .fontDescriptor
-            .withDesign(.rounded) ?? UIFont.systemFont(ofSize: 20, weight: .semibold).fontDescriptor
-        return UIFont(descriptor: roundedDescriptor, size: 20).fontName
-    }
+    static let roundedFontName = UIFont.systemFont(ofSize: 20, weight: .regular, width: .standard).fontName
 }
